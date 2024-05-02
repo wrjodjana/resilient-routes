@@ -1,0 +1,25 @@
+import React from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+
+const BaseMap = () => {
+  const nodes = [
+    { id: 1, position: [41.8786, -87.6251], name: "Chicago Loop" },
+    { id: 2, position: [41.8919, -87.6051], name: "Navy Pier" },
+    { id: 3, position: [41.8789, -87.6359], name: "Willis Tower" },
+  ];
+
+  return (
+    <div className="w-full h-screen absolute top-0 left-0 z-0">
+      <MapContainer center={[41.8781, -87.6298]} zoom={13}>
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors' />
+        {nodes.map((node) => (
+          <Marker key={node.id} position={[node.position[0], node.position[1]]}>
+            <Popup>{node.name}</Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </div>
+  );
+};
+
+export default BaseMap;

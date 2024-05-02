@@ -1,15 +1,18 @@
 import React from "react";
-import logo from "./logo.svg";
 import "./App.css";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import BaseMap from "./pages/map";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 function App() {
   return (
     <div className="App">
-      <MapContainer center={[51.505, -0.09]} zoom={13}>
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors' />
-      </MapContainer>
+      {" "}
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<BaseMap />} />
+        </Routes>
+      </BrowserRouter>
     </div>
   );
 }

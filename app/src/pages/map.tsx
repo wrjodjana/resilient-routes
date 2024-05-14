@@ -12,6 +12,14 @@ const DefaultIcon = L.icon({
   shadowUrl: iconShadow,
 });
 
+const SmallIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+  popupAnchor: [0, -8],
+});
+
 const BaseMap = () => {
   return (
     <div className="flex h-screen">
@@ -80,6 +88,32 @@ const BaseMap = () => {
               </div>
             </Popup>
           </Polyline>
+
+          {/* Markers for bridges and structures along Interstate 280 */}
+          <Marker position={[37.48642934373528, -122.23609328269959]} icon={SmallIcon}>
+            <Popup>
+              <div>
+                <h4>Bunker Hill Drive Overcrossing</h4>
+                <p>A bridge carrying Bunker Hill Drive over Interstate 280.</p>
+              </div>
+            </Popup>
+          </Marker>
+          <Marker position={[37.52340089311685, -122.27834939956665]} icon={SmallIcon}>
+            <Popup>
+              <div>
+                <h4>Ralston Avenue Overcrossing</h4>
+                <p>A bridge carrying Ralston Avenue over Interstate 280.</p>
+              </div>
+            </Popup>
+          </Marker>
+          <Marker position={[37.58031892655541, -122.33673048377442]} icon={SmallIcon}>
+            <Popup>
+              <div>
+                <h4>Serramonte Boulevard Overcrossing</h4>
+                <p>A bridge carrying Serramonte Boulevard over Interstate 280.</p>
+              </div>
+            </Popup>
+          </Marker>
         </MapContainer>
       </div>
       <Sidebar />

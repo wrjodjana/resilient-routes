@@ -1,77 +1,57 @@
+from flask import Flask, jsonify
 import pickle
 import numpy as np
-import folium
+from flask_cors import CORS
 
-################################################################################
-with open('./graph_info.pickle', 'rb') as handle:
-    graph_info = pickle.load(handle)
+app = Flask(__name__)
+CORS(app)
 
-# n_node
-# n_bridge: will damage
-# n_road: won't damage at all
-# n_edge: n_road + n_bridge
-# bridge_list
-# road_list
-# edge_list: bridge_list + road_list
-print(graph_info)
+@app.route('/')
+def home():
+    return "Welcome to the Flask App!"
 
-################################################################################
-with open('./all_result.pickle', 'rb') as handle:
-    graph_data_all = pickle.load(handle)
-    
-# inlucde 200 scenarios
-idx = 0
-print(len(graph_data_all))
-print(graph_data_all[idx].keys())
+@app.route('/data')
+def get_data():
+    # Load graph information
+    with open('./graph_info.pickle', 'rb') as handle:
+        graph_info = pickle.load(handle)
 
-graph_data = graph_data_all[idx]
+    # Load all results
+    with open('./all_result.pickle', 'rb') as handle:
+        graph_data_all = pickle.load(handle)
+    idx = 0
+    graph_data = graph_data_all[idx]
 
-### node level connectivity
-print(graph_data['node_res'].squeeze().shape)
+    # Load bridge information
+    SpreadSheet = np.genfromtxt('bridge_info_v2.csv', delimiter=',', dtype=None, encoding='utf-8-sig')
+    colNames = SpreadSheet[0, :]
+    Data = SpreadSheet[1:, :]
+    node1 = [int(n) for n in Data[:, np.where(colNames == 'node1')[0][0]]]  # Convert to Python int
+    node2 = [int(n) for n in Data[:, np.where(colNames == 'node2')[0][0]]]  # Convert to Python int
+    edge = [(n1, n2) for n1, n2 in zip(node1, node2)]
 
-### link connectivity probability
-print(graph_data['edge_feat'].squeeze().shape)
+    # Load map information
+    SpreadSheet_map = np.genfromtxt('map.csv', delimiter=',', dtype=None, encoding='utf-8-sig')
+    colNames_map = SpreadSheet_map[0, :]
+    node_file = SpreadSheet_map[1:, :]
+    id_list = [int(id) for id in node_file[:, np.where(colNames_map == 'id')[0][0]]]  # Convert to Python int
+    lat_list = [float(lat) for lat in node_file[:, np.where(colNames_map == 'lat')[0][0]]]  # Convert to Python float
+    lon_list = [float(lon) for lon in node_file[:, np.where(colNames_map == 'lon')[0][0]]]  # Convert to Python float
 
+    # Prepare data to send as JSON
+    data = {
+        "graph_info": graph_info,
+        "node_res_shape": graph_data['node_res'].squeeze().shape,
+        "edge_feat_shape": graph_data['edge_feat'].squeeze().shape,
+        "edges": edge,
+        "map_nodes": {
+            "ids": id_list,
+            "lats": lat_list,
+            "lons": lon_list
+        }
+    }
 
-################################################################################
-SpreadSheet = np.genfromtxt('bridge_info_v2.csv', delimiter=',', dtype=None, encoding='utf-8-sig')
-colNames = SpreadSheet[0, :]
-Data = SpreadSheet[1:, :]
+    return jsonify(data)
 
-node1 = Data[:, np.where(colNames == 'node1')[0][0]].astype(np.int32)
-node2 = Data[:, np.where(colNames == 'node2')[0][0]].astype(np.int32)
-
-edge = [(n1, n2) for n1, n2 in zip(node1, node2)]
-temp = list(set(edge))
-series_id = Data[:, np.where(colNames == 'serial class')[0][0]].astype(np.int32)
-bridge_class = Data[:, np.where(colNames == 'NBI class')[0][0]].astype(np.int32)
-bridge_id = Data[:, np.where(colNames == 'structure member')[0][0]]
-skew = Data[:, np.where(colNames == 'degrees_skew_034')[0][0]].astype(np.int32)
-num_span = Data[:, np.where(colNames == 'main_unit_spans_045')[0][0]].astype(np.int32)
-max_span_length = Data[:, np.where(colNames == 'max_span_len_mt_048')[0][0]].astype(np.int32)
-total_length = Data[:, np.where(colNames == 'structure_len_mt_049')[0][0]].astype(np.int32)
-
-
-################################################################################
-SpreadSheet = np.genfromtxt('map.csv', delimiter=',', dtype=None, encoding='utf-8-sig')
-colNames = SpreadSheet[0, :]
-node_file = SpreadSheet[1:, :]
-id_list = node_file[:, np.where(colNames == 'id')[0][0]].astype(np.int32)
-lat_list = node_file[:, np.where(colNames == 'lat')[0][0]].astype(np.float32)
-lon_list = node_file[:, np.where(colNames == 'lon')[0][0]].astype(np.float32)
-print(node_file)
-
-# Assuming 'lat_list' and 'lon_list' are the latitude and longitude lists from your script
-# and 'id_list' contains the identifiers for each node.
-
-# Create a map centered around the average location of the nodes
-map_center_lat = np.mean(lat_list)
-map_center_lon = np.mean(lon_list)
-mymap = folium.Map(location=[map_center_lat, map_center_lon], zoom_start=12)
-
-# Add markers for each node
-for lat, lon, node_id in zip(lat_list, lon_list, id_list):
-    folium.Marker([lat, lon], popup=str(node_id)).add_to(mymap)
-
-# Save the map to an HTML file
-mymap.save('map_of_nodes.html')
+if __name__ == '__main__':
+    app.run(debug=True)

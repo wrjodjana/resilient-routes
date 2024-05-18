@@ -1,52 +1,77 @@
-from flask import Flask, jsonify, request
 import pickle
 import numpy as np
+import folium
 
-app = Flask(__name__)
-
-# Load the graph information
+################################################################################
 with open('./graph_info.pickle', 'rb') as handle:
     graph_info = pickle.load(handle)
 
-# Load all graph data scenarios
+# n_node
+# n_bridge: will damage
+# n_road: won't damage at all
+# n_edge: n_road + n_bridge
+# bridge_list
+# road_list
+# edge_list: bridge_list + road_list
+print(graph_info)
+
+################################################################################
 with open('./all_result.pickle', 'rb') as handle:
     graph_data_all = pickle.load(handle)
+    
+# inlucde 200 scenarios
+idx = 0
+print(len(graph_data_all))
+print(graph_data_all[idx].keys())
 
-# Load bridge and map information
+graph_data = graph_data_all[idx]
+
+### node level connectivity
+print(graph_data['node_res'].squeeze().shape)
+
+### link connectivity probability
+print(graph_data['edge_feat'].squeeze().shape)
+
+
+################################################################################
 SpreadSheet = np.genfromtxt('bridge_info_v2.csv', delimiter=',', dtype=None, encoding='utf-8-sig')
 colNames = SpreadSheet[0, :]
 Data = SpreadSheet[1:, :]
+
 node1 = Data[:, np.where(colNames == 'node1')[0][0]].astype(np.int32)
 node2 = Data[:, np.where(colNames == 'node2')[0][0]].astype(np.int32)
+
 edge = [(n1, n2) for n1, n2 in zip(node1, node2)]
+temp = list(set(edge))
+series_id = Data[:, np.where(colNames == 'serial class')[0][0]].astype(np.int32)
+bridge_class = Data[:, np.where(colNames == 'NBI class')[0][0]].astype(np.int32)
+bridge_id = Data[:, np.where(colNames == 'structure member')[0][0]]
+skew = Data[:, np.where(colNames == 'degrees_skew_034')[0][0]].astype(np.int32)
+num_span = Data[:, np.where(colNames == 'main_unit_spans_045')[0][0]].astype(np.int32)
+max_span_length = Data[:, np.where(colNames == 'max_span_len_mt_048')[0][0]].astype(np.int32)
+total_length = Data[:, np.where(colNames == 'structure_len_mt_049')[0][0]].astype(np.int32)
 
-SpreadSheet_map = np.genfromtxt('map.csv', delimiter=',', dtype=None, encoding='utf-8-sig')
-colNames_map = SpreadSheet_map[0, :]
-node_file = SpreadSheet_map[1:, :]
-id_list = node_file[:, np.where(colNames_map == 'id')[0][0]].astype(np.int32)
-lat_list = node_file[:, np.where(colNames_map == 'lat')[0][0]].astype(np.float32)
-lon_list = node_file[:, np.where(colNames_map == 'lon')[0][0]].astype(np.float32)
 
-@app.route('/get_node_data', methods=['GET'])
-def get_node_data():
-    scenario_id = request.args.get('scenario_id', default=0, type=int)
-    node_data = graph_data_all[scenario_id]['node_res'].squeeze().tolist()
-    return jsonify(node_data)
+################################################################################
+SpreadSheet = np.genfromtxt('map.csv', delimiter=',', dtype=None, encoding='utf-8-sig')
+colNames = SpreadSheet[0, :]
+node_file = SpreadSheet[1:, :]
+id_list = node_file[:, np.where(colNames == 'id')[0][0]].astype(np.int32)
+lat_list = node_file[:, np.where(colNames == 'lat')[0][0]].astype(np.float32)
+lon_list = node_file[:, np.where(colNames == 'lon')[0][0]].astype(np.float32)
+print(node_file)
 
-@app.route('/get_edge_data', methods=['GET'])
-def get_edge_data():
-    scenario_id = request.args.get('scenario_id', default=0, type=int)
-    edge_data = graph_data_all[scenario_id]['edge_feat'].squeeze().tolist()
-    return jsonify(edge_data)
+# Assuming 'lat_list' and 'lon_list' are the latitude and longitude lists from your script
+# and 'id_list' contains the identifiers for each node.
 
-@app.route('/get_map_nodes', methods=['GET'])
-def get_map_nodes():
-    nodes = [{'id': int(id), 'lat': float(lat), 'lon': float(lon)} for id, lat, lon in zip(id_list, lat_list, lon_list)]
-    return jsonify(nodes)
+# Create a map centered around the average location of the nodes
+map_center_lat = np.mean(lat_list)
+map_center_lon = np.mean(lon_list)
+mymap = folium.Map(location=[map_center_lat, map_center_lon], zoom_start=12)
 
-@app.route('/get_map_edges', methods=['GET'])
-def get_map_edges():
-    return jsonify([{'node1': int(n1), 'node2': int(n2)} for n1, n2 in edge])
+# Add markers for each node
+for lat, lon, node_id in zip(lat_list, lon_list, id_list):
+    folium.Marker([lat, lon], popup=str(node_id)).add_to(mymap)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# Save the map to an HTML file
+mymap.save('map_of_nodes.html')

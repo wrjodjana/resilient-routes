@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import *
 import pickle
 import numpy as np
 from flask_cors import CORS
@@ -76,6 +76,30 @@ def get_data():
     }
 
     return jsonify(data)
+
+@app.route('/classify')
+def classify_structures():
+    SpreadSheet = np.genfromtxt('bridge_info_v2.csv', delimiter=',', dtype=None, encoding='utf-8-sig')
+    colNames = SpreadSheet[0, :]
+    Data = SpreadSheet[1:, :]
+
+    facility_carried = Data[:, np.where(colNames == 'facility_carried_007')[0][0]]
+    classification = []
+    for facility in facility_carried:
+        if 'BRIDGE' in facility.upper():
+            classification.append({'type': 'Bridge', 'description': facility})
+        else:
+            classification.append({'type': 'Highway', 'description': facility})
+    
+    # Get query parameter for type
+    structure_type = request.args.get('type', '').upper()  # Get the type from query parameters and convert to uppercase
+
+    # Filter data based on the type provided in the query parameter
+    filtered_data = [entry for entry in classification if entry['type'].upper() == structure_type]
+
+
+    return jsonify(filtered_data)  
+
 
 if __name__ == '__main__':
     app.run(debug=True)

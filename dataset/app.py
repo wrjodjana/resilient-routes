@@ -38,6 +38,29 @@ def get_data():
     lat_list = [float(lat) for lat in node_file[:, np.where(colNames_map == 'lat')[0][0]]]  # Convert to Python float
     lon_list = [float(lon) for lon in node_file[:, np.where(colNames_map == 'lon')[0][0]]]  # Convert to Python float
 
+    # load bridge information
+    series_id = Data[:, np.where(colNames == 'serial class')[0][0]].astype(np.int32)
+    bridge_class = Data[:, np.where(colNames == 'NBI class')[0][0]].astype(np.int32)
+    bridge_id = Data[:, np.where(colNames == 'structure member')[0][0]]
+    skew = Data[:, np.where(colNames == 'degrees_skew_034')[0][0]].astype(np.int32)
+    num_span = Data[:, np.where(colNames == 'main_unit_spans_045')[0][0]].astype(np.int32)
+    max_span_length = Data[:, np.where(colNames == 'max_span_len_mt_048')[0][0]].astype(np.int32)
+    total_length = Data[:, np.where(colNames == 'structure_len_mt_049')[0][0]].astype(np.int32)
+
+    bridge_info = [{
+        "node1": int(n1),
+        "node2": int(n2),
+        "series_id": int(series),
+        "bridge_class": int(b_class),
+        "bridge_id": str(b_id),
+        "skew": int(sk),
+        "num_span": int(num_sp),
+        "max_span_length": int(max_sp_len),
+        "total_length": int(tot_len)
+    } for n1, n2, series, b_class, b_id, sk, num_sp, max_sp_len, tot_len in zip(
+        node1, node2, series_id, bridge_class, bridge_id, skew, num_span, max_span_length, total_length
+    )]
+
     # Prepare data to send as JSON
     data = {
         "graph_info": graph_info,
@@ -48,7 +71,8 @@ def get_data():
             "ids": id_list,
             "lats": lat_list,
             "lons": lon_list
-        }
+        },
+        "bridges": bridge_info
     }
 
     return jsonify(data)

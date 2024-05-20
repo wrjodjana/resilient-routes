@@ -59,3 +59,43 @@ id_list = node_file[:, np.where(colNames == 'id')[0][0]].astype(np.int32)
 lat_list = node_file[:, np.where(colNames == 'lat')[0][0]].astype(np.float32)
 lon_list = node_file[:, np.where(colNames == 'lon')[0][0]].astype(np.float32)
 print(node_file)
+
+
+def load_node_data():
+    df = pd.read_csv('bridge_info_v2.csv', usecols=['node1', 'node2', 'lat_016', 'long_017'], dtype={'lat_016': float, 'long_017': float})
+    df['lat_016'] = df['lat_016'].astype(float)
+    df['long_017'] = df['long_017'].astype(float)
+    return df
+
+@app.route('/api/plot', methods=['POST'])
+def plot_nodes():
+    data = request.get_json()
+    start_lat = float(data['startLat'])
+    start_lon = float(data['startLon'])
+    end_lat = float(data['endLat'])
+    end_lon = float(data['endLon'])
+
+    node_data = load_node_data()
+
+    # Calculate distances to start and end points for node1
+    node_data['start_dist'] = np.sqrt((node_data['lat_016'] - start_lat)**2 + (node_data['long_017'] - start_lon)**2)
+    # Calculate distances to start and end points for node2
+    node_data['end_dist'] = np.sqrt((node_data['lat_016'] - end_lat)**2 + (node_data['long_017'] - end_lon)**2)
+
+    # Find closest node1 to start and closest node2 to end
+    start_node = node_data.loc[node_data['start_dist'].idxmin()]
+    end_node = node_data.loc[node_data['end_dist'].idxmin()]
+
+    response = {
+        'start_node': {
+            'id': start_node['node1'],
+            'lat': start_node['lat_016'],
+            'lon': start_node['long_017']
+        },
+        'end_node': {
+            'id': end_node['node2'],
+            'lat': end_node['lat_016'],
+            'lon': end_node['long_017']
+        }
+    }
+    return jsonify(response)

@@ -1,7 +1,9 @@
 from flask import *
 import pickle
 import numpy as np
+import pandas as pd
 from flask_cors import CORS
+import csv
 
 app = Flask(__name__)
 CORS(app)
@@ -77,28 +79,36 @@ def get_data():
 
     return jsonify(data)
 
-@app.route('/classify')
-def classify_structures():
-    SpreadSheet = np.genfromtxt('bridge_info_v2.csv', delimiter=',', dtype=None, encoding='utf-8-sig')
-    colNames = SpreadSheet[0, :]
-    Data = SpreadSheet[1:, :]
+####################################################
 
-    facility_carried = Data[:, np.where(colNames == 'facility_carried_007')[0][0]]
-    classification = []
-    for facility in facility_carried:
-        if 'BRIDGE' in facility.upper():
-            classification.append({'type': 'Bridge', 'description': facility})
-        else:
-            classification.append({'type': 'Highway', 'description': facility})
-    
-    # Get query parameter for type
-    structure_type = request.args.get('type', '').upper()  # Get the type from query parameters and convert to uppercase
+def fetch_node_data(node_id):
+    csv_file_path = 'map.csv'
+    with open(csv_file_path, mode='r', encoding='utf-8-sig') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            if int(row['id']) == node_id:
+                return {
+                    "node_id": node_id,
+                    "latitude": row['lat'],
+                    "longitude": row['lon']
+                }
+    return {"node_id": node_id, "error": "Node data not found"}
 
-    # Filter data based on the type provided in the query parameter
-    filtered_data = [entry for entry in classification if entry['type'].upper() == structure_type]
+@app.route('/data/nodes')
+def get_nodes_data():
+    node1_id = request.args.get('node1', type=int)
+    node2_id = request.args.get('node2', type=int)
 
+    node1_data = fetch_node_data(node1_id)
+    node2_data = fetch_node_data(node2_id)
 
-    return jsonify(filtered_data)  
+    data = {
+        "node1": node1_data,
+        "node2": node2_data
+    }
+
+    return jsonify(data)
+
 
 
 if __name__ == '__main__':

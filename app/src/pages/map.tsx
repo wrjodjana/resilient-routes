@@ -58,6 +58,7 @@ const BaseMap = () => {
   const [selectedNodeData, setSelectedNodeData] = useState<NodeData | null>(null);
   const [data, setData] = useState<Data | null>(null);
   const [runAllScenarios, setRunAllScenarios] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("http://localhost:5000/data")
@@ -65,7 +66,10 @@ const BaseMap = () => {
       .then((data: Data) => {
         setData(data);
       })
-      .catch((error) => console.error("Error fetching data:", error));
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+        setError("Failed to load data. Please try again later.");
+      });
   }, []);
 
   const handleRunAllScenarios = () => {
@@ -75,10 +79,12 @@ const BaseMap = () => {
   const handleReset = () => {
     setSelectedNodeData(null);
     setRunAllScenarios(false);
+    setError("");
   };
 
   return (
     <div className="flex h-screen">
+      {error && <div className="alert alert-error">{error}</div>}
       <div className="w-5/6 h-full">
         <MapContainer center={[37.8272, -122.2913]} zoom={13} className="h-full">
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -148,6 +154,7 @@ const BaseMap = () => {
         </MapContainer>
       </div>
       <Sidebar setSelectedNodeData={setSelectedNodeData} runAllScenarios={handleRunAllScenarios} reset={handleReset} />
+      {error && <div className="error-message">{error}</div>}
     </div>
   );
 };

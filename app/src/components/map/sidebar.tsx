@@ -10,22 +10,50 @@ interface SidebarProps {
 const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset }: SidebarProps) => {
   const [startPlace, setStartPlace] = useState<string>("");
   const [endPlace, setEndPlace] = useState<string>("");
+  const [error, setError] = useState<string>("");
 
   const handleRunScenario = async (event: { preventDefault: () => void }) => {
     event.preventDefault();
+    if (!startPlace || !endPlace) {
+      setError("Both start and end places must be filled.");
+      return;
+    }
+    if (startPlace === endPlace) {
+      setError("Start and end place cannot be the same.");
+      return;
+    }
+
+    if (parseInt(startPlace) > 38 || parseInt(startPlace) < 0 || parseInt(endPlace) > 38 || parseInt(endPlace) < 0) {
+      setError("Invalid node IDs provided");
+      return;
+    }
+
     try {
       const response = await axios.get(`http://localhost:5000/data/nodes?node1=${startPlace}&node2=${endPlace}`);
-      setSelectedNodeData(response.data);
+      if (response.data.error) {
+        setError(response.data.error);
+        setSelectedNodeData(null);
+      } else {
+        setSelectedNodeData(response.data);
+        setError("");
+      }
     } catch (err) {
       console.error("Failed to fetch data", err);
+      setError("Failed to fetch data. Please check your network connection.");
       setSelectedNodeData(null);
     }
+  };
+
+  const handleReset = () => {
+    reset();
+    setError("");
+    setStartPlace("");
+    setEndPlace("");
   };
 
   return (
     <div className="w-1/4 p-4 shadow bg-lightBlue">
       <h2 className="text-xl font-bold mb-4 text-cyan mt-3">Graph Neural Network Visualization</h2>
-
       <div className="mb-4">
         <label className="block mb-2 font-bold font-figtree">Select Visualization Level</label>
         <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree">
@@ -51,12 +79,13 @@ const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset }: SidebarProps) 
           </button>
         </form>
       </div>
+      {error && <div className="text-red mb-2">{error}</div>}
 
       <button onClick={runAllScenarios} className="mt-4 px-4 py-2 bg-green-500 text-white rounded font-figtree w-full">
         Run All Scenarios
       </button>
 
-      <button onClick={reset} className="px-4 py-2 border border-gray-300 rounded font-figtree w-full">
+      <button onClick={handleReset} className="mt-4 px-4 py-2 border border-gray-300 rounded font-figtree w-full">
         Reset
       </button>
     </div>

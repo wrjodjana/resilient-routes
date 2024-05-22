@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker, Tooltip } from "react-leaflet";
 import Sidebar from "../components/map/sidebar";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -15,30 +15,17 @@ const SmallIcon = L.icon({
   popupAnchor: [0, -8],
 });
 
-interface BridgeInfo {
-  node1: number;
-  node2: number;
-  series_id: number;
-  bridge_class: number;
-  bridge_id: string;
-  skew: number;
-  num_span: number;
-  max_span_length: number;
-  total_length: number;
-}
-
 interface MapNode {
   ids: number[];
   lats: number[];
   lons: number[];
 }
 
-type Edge = [number, number];
-
 interface Data {
   map_nodes: MapNode;
-  edges: Edge[];
-  bridges: BridgeInfo[];
+  edge_list: number[][];
+  node_res: number[];
+  edge_feat: number[][];
 }
 
 interface NodeData {
@@ -82,6 +69,13 @@ const BaseMap = () => {
     setError("");
   };
 
+  function getColorByValue(value: number) {
+    const hue = 240;
+    const saturation = 100;
+    const lightness = Math.round(100 - value * 80);
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  }
+
   return (
     <div className="flex h-screen">
       {error && <div className="alert alert-error">{error}</div>}
@@ -90,7 +84,7 @@ const BaseMap = () => {
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           {selectedNodeData && (
             <>
-              <Marker position={[selectedNodeData.node1.latitude, selectedNodeData.node1.longitude]} icon={SmallIcon}>
+              <CircleMarker center={[selectedNodeData.node1.latitude, selectedNodeData.node1.longitude]} color="blue" radius={5} fillOpacity={1}>
                 <Popup>
                   Node ID: {selectedNodeData.node1.node_id}
                   <br />
@@ -98,8 +92,8 @@ const BaseMap = () => {
                   <br />
                   Longitude: {selectedNodeData.node1.longitude}
                 </Popup>
-              </Marker>
-              <Marker position={[selectedNodeData.node2.latitude, selectedNodeData.node2.longitude]} icon={SmallIcon}>
+              </CircleMarker>
+              <CircleMarker center={[selectedNodeData.node2.latitude, selectedNodeData.node2.longitude]} color="blue" radius={5} fillOpacity={1}>
                 <Popup>
                   Node ID: {selectedNodeData.node2.node_id}
                   <br />
@@ -107,48 +101,39 @@ const BaseMap = () => {
                   <br />
                   Longitude: {selectedNodeData.node2.longitude}
                 </Popup>
-              </Marker>
+              </CircleMarker>
             </>
           )}
           {data && runAllScenarios && (
             <>
-              {data.map_nodes.ids.map((id: number, index: number) => (
-                <Marker key={id} position={[data.map_nodes.lats[index], data.map_nodes.lons[index]]} icon={SmallIcon}>
-                  <Popup>
-                    Node ID: {id}
-                    <br />
-                    Latitude: {data.map_nodes.lats[index]}
-                    <br />
-                    Longitude: {data.map_nodes.lons[index]}
-                  </Popup>
-                </Marker>
-              ))}
-              {data.bridges.map((bridge, index) => (
-                <Polyline
-                  key={index}
-                  positions={[
-                    [data.map_nodes.lats[bridge.node1], data.map_nodes.lons[bridge.node1]],
-                    [data.map_nodes.lats[bridge.node2], data.map_nodes.lons[bridge.node2]],
-                  ]}
-                  color="red"
-                >
-                  <Popup>
-                    Bridge ID: {bridge.bridge_id}
-                    <br />
-                    Series ID: {bridge.series_id}
-                    <br />
-                    Bridge Class: {bridge.bridge_class}
-                    <br />
-                    Skew: {bridge.skew} degrees
-                    <br />
-                    Number of Spans: {bridge.num_span}
-                    <br />
-                    Max Span Length: {bridge.max_span_length} m
-                    <br />
-                    Total Length: {bridge.total_length} m
-                  </Popup>
-                </Polyline>
-              ))}
+              {data &&
+                data.edge_list &&
+                data.edge_list.map((edge, index) => (
+                  <Polyline
+                    key={index}
+                    positions={[
+                      [data.map_nodes.lats[edge[0]], data.map_nodes.lons[edge[0]]],
+                      [data.map_nodes.lats[edge[1]], data.map_nodes.lons[edge[1]]],
+                    ]}
+                    color="black"
+                  >
+                    <Popup>Edge Feature: {data.edge_feat[index]}</Popup>
+                  </Polyline>
+                ))}
+              {data &&
+                data.map_nodes.ids.map((id: number, index: number) => (
+                  <CircleMarker key={id} center={[data.map_nodes.lats[index], data.map_nodes.lons[index]]} color={getColorByValue(data.node_res[index])} radius={5} fillOpacity={1}>
+                    <Popup>
+                      Node ID: {id}
+                      <br />
+                      Latitude: {data.map_nodes.lats[index]}
+                      <br />
+                      Longitude: {data.map_nodes.lons[index]}
+                      <br />
+                      Value: {data.node_res[index]}
+                    </Popup>
+                  </CircleMarker>
+                ))}
             </>
           )}
         </MapContainer>

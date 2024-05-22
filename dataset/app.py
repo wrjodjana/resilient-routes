@@ -17,6 +17,8 @@ def get_data():
     # Load graph information
     with open('./graph_info.pickle', 'rb') as handle:
         graph_info = pickle.load(handle)
+    
+    edge_list = graph_info.get('edge_list')
 
     # Load all results
     with open('./all_result.pickle', 'rb') as handle:
@@ -24,13 +26,6 @@ def get_data():
     idx = 0
     graph_data = graph_data_all[idx]
 
-    # Load bridge information
-    SpreadSheet = np.genfromtxt('bridge_info_v2.csv', delimiter=',', dtype=None, encoding='utf-8-sig')
-    colNames = SpreadSheet[0, :]
-    Data = SpreadSheet[1:, :]
-    node1 = [int(n) for n in Data[:, np.where(colNames == 'node1')[0][0]]]  # Convert to Python int
-    node2 = [int(n) for n in Data[:, np.where(colNames == 'node2')[0][0]]]  # Convert to Python int
-    edge = [(n1, n2) for n1, n2 in zip(node1, node2)]
 
     # Load map information
     SpreadSheet_map = np.genfromtxt('map.csv', delimiter=',', dtype=None, encoding='utf-8-sig')
@@ -40,41 +35,17 @@ def get_data():
     lat_list = [float(lat) for lat in node_file[:, np.where(colNames_map == 'lat')[0][0]]]  # Convert to Python float
     lon_list = [float(lon) for lon in node_file[:, np.where(colNames_map == 'lon')[0][0]]]  # Convert to Python float
 
-    # load bridge information
-    series_id = Data[:, np.where(colNames == 'serial class')[0][0]].astype(np.int32)
-    bridge_class = Data[:, np.where(colNames == 'NBI class')[0][0]].astype(np.int32)
-    bridge_id = Data[:, np.where(colNames == 'structure member')[0][0]]
-    skew = Data[:, np.where(colNames == 'degrees_skew_034')[0][0]].astype(np.int32)
-    num_span = Data[:, np.where(colNames == 'main_unit_spans_045')[0][0]].astype(np.int32)
-    max_span_length = Data[:, np.where(colNames == 'max_span_len_mt_048')[0][0]].astype(np.int32)
-    total_length = Data[:, np.where(colNames == 'structure_len_mt_049')[0][0]].astype(np.int32)
-
-    bridge_info = [{
-        "node1": int(n1),
-        "node2": int(n2),
-        "series_id": int(series),
-        "bridge_class": int(b_class),
-        "bridge_id": str(b_id),
-        "skew": int(sk),
-        "num_span": int(num_sp),
-        "max_span_length": int(max_sp_len),
-        "total_length": int(tot_len)
-    } for n1, n2, series, b_class, b_id, sk, num_sp, max_sp_len, tot_len in zip(
-        node1, node2, series_id, bridge_class, bridge_id, skew, num_span, max_span_length, total_length
-    )]
-
     # Prepare data to send as JSON
     data = {
         "graph_info": graph_info,
-        "node_res_shape": graph_data['node_res'].squeeze().shape,
-        "edge_feat_shape": graph_data['edge_feat'].squeeze().shape,
-        "edges": edge,
+        "edge_list": edge_list,
         "map_nodes": {
             "ids": id_list,
             "lats": lat_list,
             "lons": lon_list
         },
-        "bridges": bridge_info
+        "node_res": graph_data['node_res'].squeeze().tolist(),
+        "edge_feat": graph_data['edge_feat'].squeeze().tolist()
     }
 
     return jsonify(data)

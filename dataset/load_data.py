@@ -27,9 +27,11 @@ graph_data = graph_data_all[idx]
 
 ### node level connectivity
 print(graph_data['node_res'].squeeze().shape)
+print(graph_data['node_res'].squeeze()) # values between 0 to 1
 
 ### link connectivity probability
 print(graph_data['edge_feat'].squeeze().shape)
+print(graph_data['edge_feat'].squeeze()) # include every edge feature
 
 
 ################################################################################

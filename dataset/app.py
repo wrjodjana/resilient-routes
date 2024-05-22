@@ -80,6 +80,90 @@ def get_nodes_data():
 
     return jsonify(data)
 
+################################################
+@app.route('/data/bridges')
+def get_bridges_data():
+    # Load map information
+    SpreadSheet_map = np.genfromtxt('map.csv', delimiter=',', dtype=None, encoding='utf-8-sig')
+    colNames_map = SpreadSheet_map[0, :]
+    node_file = SpreadSheet_map[1:, :]
+    id_list = [int(id) for id in node_file[:, np.where(colNames_map == 'id')[0][0]]]  # Convert to Python int
+    lat_list = [float(lat) for lat in node_file[:, np.where(colNames_map == 'lat')[0][0]]]  # Convert to Python float
+    lon_list = [float(lon) for lon in node_file[:, np.where(colNames_map == 'lon')[0][0]]]  # Convert to Python float
+
+
+    # Load bridge information
+    SpreadSheet = np.genfromtxt('bridge_info_v2.csv', delimiter=',', dtype=None, encoding='utf-8-sig')
+    colNames = SpreadSheet[0, :]
+    Data = SpreadSheet[1:, :]
+    node1 = [int(n) for n in Data[:, np.where(colNames == 'node1')[0][0]]] 
+    node2 = [int(n) for n in Data[:, np.where(colNames == 'node2')[0][0]]] 
+    edge = [(n1, n2) for n1, n2 in zip(node1, node2)]
+
+    # load bridge information
+    series_id = Data[:, np.where(colNames == 'serial class')[0][0]].astype(np.int32)
+    bridge_class = Data[:, np.where(colNames == 'NBI class')[0][0]].astype(np.int32)
+    bridge_id = Data[:, np.where(colNames == 'structure member')[0][0]]
+    skew = Data[:, np.where(colNames == 'degrees_skew_034')[0][0]].astype(np.int32)
+    num_span = Data[:, np.where(colNames == 'main_unit_spans_045')[0][0]].astype(np.int32)
+    max_span_length = Data[:, np.where(colNames == 'max_span_len_mt_048')[0][0]].astype(np.int32)
+    total_length = Data[:, np.where(colNames == 'structure_len_mt_049')[0][0]].astype(np.int32)
+
+    bridge_info = [{
+        "node1": int(n1),
+        "node2": int(n2),
+        "series_id": int(series),
+        "bridge_class": int(b_class),
+        "bridge_id": str(b_id),
+        "skew": int(sk),
+        "num_span": int(num_sp),
+        "max_span_length": int(max_sp_len),
+        "total_length": int(tot_len)
+    } for n1, n2, series, b_class, b_id, sk, num_sp, max_sp_len, tot_len in zip(
+        node1, node2, series_id, bridge_class, bridge_id, skew, num_span, max_span_length, total_length
+    )]
+
+    data = {
+        "bridges": bridge_info,
+        "edges": edge,
+        "map_nodes": {
+            "ids": id_list,
+            "lats": lat_list,
+            "lons": lon_list
+        }
+    }
+
+    return jsonify(data)
+
+@app.route('/data/roads')
+def get_road_data():
+    # Load graph information
+    with open('./graph_info.pickle', 'rb') as handle:
+        graph_info = pickle.load(handle)
+    
+    road_list = graph_info.get('road_list')
+    # load map data
+    SpreadSheet_map = np.genfromtxt('map.csv', delimiter=',', dtype=None, encoding='utf-8-sig')
+    colNames_map = SpreadSheet_map[0, :]
+    node_file = SpreadSheet_map[1:, :]
+    id_list = [int(id) for id in node_file[:, np.where(colNames_map == 'id')[0][0]]]  # Convert to Python int
+    lat_list = [float(lat) for lat in node_file[:, np.where(colNames_map == 'lat')[0][0]]]  # Convert to Python float
+    lon_list = [float(lon) for lon in node_file[:, np.where(colNames_map == 'lon')[0][0]]]  # Convert to Python float
+
+    data = {
+        "roads": road_list,
+        "map_nodes": {
+            "ids": id_list,
+            "lats": lat_list,
+            "lons": lon_list
+        }
+
+    }
+    return jsonify(data)
+
+
+
+
 
 
 if __name__ == '__main__':

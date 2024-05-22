@@ -4,13 +4,17 @@ import axios from "axios";
 interface SidebarProps {
   setSelectedNodeData: (data: any) => void;
   runAllScenarios: () => void;
+  runBridgeScenario: () => void;
+  runRoadScenario: () => void;
   reset: () => void;
+  setVisualizationLevel: (level: string) => void;
 }
 
-const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset }: SidebarProps) => {
+const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenario, runRoadScenario, setVisualizationLevel }: SidebarProps) => {
   const [startPlace, setStartPlace] = useState<string>("");
   const [endPlace, setEndPlace] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [visualizationLevel, setVisualizationLevelState] = useState<string>("scenario1");
 
   const handleRunScenario = async (event: { preventDefault: () => void }) => {
     event.preventDefault();
@@ -51,15 +55,21 @@ const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset }: SidebarProps) 
     setEndPlace("");
   };
 
+  const handleVisualizationChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const level = event.target.value;
+    setVisualizationLevelState(level);
+    setVisualizationLevel(level);
+  };
+
   return (
     <div className="w-1/4 p-4 shadow bg-lightBlue">
       <h2 className="text-xl font-bold mb-4 text-cyan mt-3">Graph Neural Network Visualization</h2>
       <div className="mb-4">
         <label className="block mb-2 font-bold font-figtree">Select Visualization Level</label>
-        <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree">
-          <option value="scenario1">Show on Edge Level</option>
+        <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={visualizationLevel} onChange={handleVisualizationChange}>
+          <option value="scenario1">Show on Both Levels</option>
           <option value="scenario2">Show on Node Level</option>
-          <option value="scenario3">Flood Evaluations</option>
+          <option value="scenario3">Show on Edge Levels</option>
         </select>
       </div>
 
@@ -79,10 +89,19 @@ const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset }: SidebarProps) 
           </button>
         </form>
       </div>
+
       {error && <div className="text-red mb-2">{error}</div>}
 
       <button onClick={runAllScenarios} className="mt-4 px-4 py-2 bg-green-500 text-white rounded font-figtree w-full">
         Run All Scenarios
+      </button>
+
+      <button onClick={runBridgeScenario} className="mt-4 px-4 py-2 bg-orange-500 text-white rounded font-figtree w-full">
+        Run Bridge Scenarios
+      </button>
+
+      <button onClick={runRoadScenario} className="mt-4 px-4 py-2 bg-purple-500 text-white rounded font-figtree w-full">
+        Run Road Scenarios
       </button>
 
       <button onClick={handleReset} className="mt-4 px-4 py-2 border border-gray-300 rounded font-figtree w-full">

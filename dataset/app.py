@@ -70,12 +70,32 @@ def get_nodes_data():
     node1_id = request.args.get('node1', type=int)
     node2_id = request.args.get('node2', type=int)
 
+    # Fetch node data
     node1_data = fetch_node_data(node1_id)
     node2_data = fetch_node_data(node2_id)
 
+    # Check for direct edge
+    with open('./graph_info.pickle', 'rb') as handle:
+        graph_info = pickle.load(handle)
+    edge_list = graph_info.get('edge_list')
+
+    direct_edge = any([node1_id, node2_id] == edge or [node2_id, node1_id] == edge for edge in edge_list)
+
+    if not direct_edge:
+        # Find all nodes connected to node1 and node2
+        connected_nodes1 = [edge[1] if edge[0] == node1_id else edge[0] for edge in edge_list if node1_id in edge]
+        connected_nodes2 = [edge[1] if edge[0] == node2_id else edge[0] for edge in edge_list if node2_id in edge]
+        print(connected_nodes1)
+        print(connected_nodes2)
+        node1_data['connected_nodes'] = connected_nodes1
+        node2_data['connected_nodes'] = connected_nodes2
+        print(node1_data)
+        print(node2_data)
+
     data = {
         "node1": node1_data,
-        "node2": node2_data
+        "node2": node2_data,
+        "direct_edge": direct_edge
     }
 
     return jsonify(data)
@@ -98,7 +118,13 @@ def get_bridges_data():
     Data = SpreadSheet[1:, :]
     node1 = [int(n) for n in Data[:, np.where(colNames == 'node1')[0][0]]] 
     node2 = [int(n) for n in Data[:, np.where(colNames == 'node2')[0][0]]] 
-    edge = [(n1, n2) for n1, n2 in zip(node1, node2)]
+    # edge = [(n1, n2) for n1, n2 in zip(node1, node2)]
+
+    # load edge from pickle file
+    with open('./graph_info.pickle', 'rb') as handle:
+        graph_info = pickle.load(handle)
+    
+    edge_list = graph_info.get('edge_list')
 
     # load bridge information
     series_id = Data[:, np.where(colNames == 'serial class')[0][0]].astype(np.int32)
@@ -125,7 +151,7 @@ def get_bridges_data():
 
     data = {
         "bridges": bridge_info,
-        "edges": edge,
+        "edges": edge_list,
         "map_nodes": {
             "ids": id_list,
             "lats": lat_list,
@@ -160,10 +186,6 @@ def get_road_data():
 
     }
     return jsonify(data)
-
-
-
-
 
 
 if __name__ == '__main__':

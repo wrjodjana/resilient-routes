@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 from flask_cors import CORS
 import csv
+from collections import *
+import heapq
 
 app = Flask(__name__)
 CORS(app)
@@ -60,42 +62,71 @@ def fetch_node_data(node_id):
             if int(row['id']) == node_id:
                 return {
                     "node_id": node_id,
-                    "latitude": row['lat'],
-                    "longitude": row['lon']
+                    "latitude": float(row['lat']),
+                    "longitude": float(row['lon'])
                 }
     return {"node_id": node_id, "error": "Node data not found"}
+
+def fetch_connected_nodes_data(node_ids):
+    connected_nodes = []
+    csv_file_path = 'map.csv'
+    with open(csv_file_path, mode='r', encoding='utf-8-sig') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            if int(row['id']) in node_ids:
+                connected_nodes.append({
+                    "node_id": int(row['id']),
+                    "latitude": float(row['lat']),
+                    "longitude": float(row['lon'])
+                })
+    return connected_nodes
 
 @app.route('/data/nodes')
 def get_nodes_data():
     node1_id = request.args.get('node1', type=int)
     node2_id = request.args.get('node2', type=int)
 
-    # Fetch node data
     node1_data = fetch_node_data(node1_id)
     node2_data = fetch_node_data(node2_id)
 
-    # Check for direct edge
     with open('./graph_info.pickle', 'rb') as handle:
         graph_info = pickle.load(handle)
     edge_list = graph_info.get('edge_list')
-    print(edge_list)
 
-    direct_edge = any({node1_id, node2_id} == {edge[0], edge[1]} for edge in edge_list)
-    print(direct_edge)
+    from collections import defaultdict
+    graph = defaultdict(list)
+    for start, end in edge_list:
+        graph[start].append(end)
+        graph[end].append(start) 
 
-    if not direct_edge:
-        connected_nodes1 = [edge[1] if edge[0] == node1_id else edge[0] for edge in edge_list if node1_id in edge]
-        connected_nodes2 = [edge[1] if edge[0] == node2_id else edge[0] for edge in edge_list if node2_id in edge]
-        node1_data['connected_nodes'] = connected_nodes1
-        node2_data['connected_nodes'] = connected_nodes2
+    def dijkstra(graph, start, end):
+        min_heap = [(0, start, [])] 
+        visited = set()
+        while min_heap:
+            (cost, vertex, path) = heapq.heappop(min_heap)
+            if vertex not in visited:
+                visited.add(vertex)
+                path = path + [vertex]
+
+                if vertex == end:
+                    return path
+
+                for next_vertex in graph[vertex]:
+                    if next_vertex not in visited:
+                        heapq.heappush(min_heap, (cost + 1, next_vertex, path))
+        return []
+
+    path = dijkstra(graph, node1_id, node2_id)
 
     data = {
         "node1": node1_data,
         "node2": node2_data,
-        "direct_edge": direct_edge
+        "path": path
     }
 
     return jsonify(data)
+
+
 
 ################################################
 @app.route('/data/bridges')

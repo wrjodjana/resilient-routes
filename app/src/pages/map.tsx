@@ -21,12 +21,15 @@ interface NodeData {
     latitude: number;
     longitude: number;
     node_id: string;
+    connected_nodes?: { latitude: number; longitude: number }[];
   };
   node2: {
     latitude: number;
     longitude: number;
     node_id: string;
+    connected_nodes?: { latitude: number; longitude: number }[];
   };
+  direct_edge?: boolean;
 }
 
 interface BridgeInfo {
@@ -152,6 +155,49 @@ const BaseMap = () => {
                   Longitude: {selectedNodeData.node2.longitude}
                 </Popup>
               </CircleMarker>
+              {selectedNodeData.direct_edge && (
+                <Polyline
+                  positions={[
+                    [selectedNodeData.node1.latitude, selectedNodeData.node1.longitude],
+                    [selectedNodeData.node2.latitude, selectedNodeData.node2.longitude],
+                  ]}
+                  color="red"
+                />
+              )}
+              {!selectedNodeData.direct_edge && (
+                <>
+                  {selectedNodeData.node1.connected_nodes?.map((node) => {
+                    if (node.latitude === undefined || node.longitude === undefined) {
+                      console.error("Invalid node data", node);
+                      return null;
+                    }
+                    return (
+                      <Polyline
+                        positions={[
+                          [selectedNodeData.node1.latitude, selectedNodeData.node1.longitude],
+                          [node.latitude, node.longitude],
+                        ]}
+                        color="green"
+                      />
+                    );
+                  })}
+                  {selectedNodeData.node2.connected_nodes?.map((node) => {
+                    if (node.latitude === undefined || node.longitude === undefined) {
+                      console.error("Invalid node data", node);
+                      return null;
+                    }
+                    return (
+                      <Polyline
+                        positions={[
+                          [selectedNodeData.node2.latitude, selectedNodeData.node2.longitude],
+                          [node.latitude, node.longitude],
+                        ]}
+                        color="orange"
+                      />
+                    );
+                  })}
+                </>
+              )}
             </>
           )}
           {data && runAllScenarios && (

@@ -78,19 +78,16 @@ def get_nodes_data():
     with open('./graph_info.pickle', 'rb') as handle:
         graph_info = pickle.load(handle)
     edge_list = graph_info.get('edge_list')
+    print(edge_list)
 
-    direct_edge = any([node1_id, node2_id] == edge or [node2_id, node1_id] == edge for edge in edge_list)
+    direct_edge = any({node1_id, node2_id} == {edge[0], edge[1]} for edge in edge_list)
+    print(direct_edge)
 
     if not direct_edge:
-        # Find all nodes connected to node1 and node2
         connected_nodes1 = [edge[1] if edge[0] == node1_id else edge[0] for edge in edge_list if node1_id in edge]
         connected_nodes2 = [edge[1] if edge[0] == node2_id else edge[0] for edge in edge_list if node2_id in edge]
-        print(connected_nodes1)
-        print(connected_nodes2)
         node1_data['connected_nodes'] = connected_nodes1
         node2_data['connected_nodes'] = connected_nodes2
-        print(node1_data)
-        print(node2_data)
 
     data = {
         "node1": node1_data,

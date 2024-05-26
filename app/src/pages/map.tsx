@@ -63,6 +63,7 @@ const BaseMap = () => {
   const [runRoadScenario, setRunRoadScenario] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [visualizationLevel, setVisualizationLevel] = useState<string>("scenario1");
+  const [selectedMap, setSelectedMap] = useState<string>("map1");
 
   useEffect(() => {
     fetch("http://localhost:5000/data")
@@ -133,7 +134,8 @@ const BaseMap = () => {
       <div className="w-5/6 h-full">
         <MapContainer center={[37.8272, -122.2913]} zoom={13} className="h-full">
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          {selectedNodeData && (
+          {selectedNodeData && selectedNodeData.path && data && visualizationLevel !== "scenario2" && <Polyline positions={selectedNodeData.path.map((index) => [data.map_nodes.lats[index], data.map_nodes.lons[index]])} color="orange" />}
+          {selectedNodeData && visualizationLevel !== "scenario3" && (
             <>
               <CircleMarker center={[selectedNodeData.node1.latitude, selectedNodeData.node1.longitude]} color="blue" radius={5} fillOpacity={1}>
                 <Popup>
@@ -153,7 +155,6 @@ const BaseMap = () => {
                   Longitude: {selectedNodeData.node2.longitude}
                 </Popup>
               </CircleMarker>
-              {selectedNodeData && selectedNodeData.path && data && <Polyline positions={selectedNodeData.path.map((index) => [data.map_nodes.lats[index], data.map_nodes.lons[index]])} color="orange" />}
             </>
           )}
           {data && runAllScenarios && (
@@ -277,6 +278,7 @@ const BaseMap = () => {
         runBridgeScenario={handleRunBridgeScenario}
         runRoadScenario={handleRunRoadScenario}
         setVisualizationLevel={setVisualizationLevel}
+        setMap={setSelectedMap}
       />
       {error && <div className="error-message">{error}</div>}
     </div>

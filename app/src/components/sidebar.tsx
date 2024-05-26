@@ -8,13 +8,15 @@ interface SidebarProps {
   runRoadScenario: () => void;
   reset: () => void;
   setVisualizationLevel: (level: string) => void;
+  setMap: (mapName: string) => void;
 }
 
-const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenario, runRoadScenario, setVisualizationLevel }: SidebarProps) => {
+const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenario, runRoadScenario, setVisualizationLevel, setMap }: SidebarProps) => {
   const [startPlace, setStartPlace] = useState<string>("");
   const [endPlace, setEndPlace] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [visualizationLevel, setVisualizationLevelState] = useState<string>("scenario1");
+  const [selectedMap, setSelectedMap] = useState<string>("map1");
 
   const handleRunScenario = async (event: { preventDefault: () => void }) => {
     event.preventDefault();
@@ -59,11 +61,25 @@ const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenari
     const level = event.target.value;
     setVisualizationLevelState(level);
     setVisualizationLevel(level);
+    setSelectedMap("map1");
+  };
+
+  const handleMapChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const mapName = event.target.value;
+    setSelectedMap(mapName);
+    setMap(mapName);
   };
 
   return (
     <div className="w-1/4 p-4 shadow bg-lightBlue">
       <h2 className="text-xl font-bold mb-4 text-cyan mt-3">Graph Neural Network Visualization</h2>
+      <div className="mb-4">
+        <label className="block mb-2 font-bold font-figtree">Select Map</label>
+        <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={selectedMap} onChange={handleMapChange}>
+          <option value="map1">Bay Area Map 1</option>
+          <option value="map2">Bay Area Map 2</option>
+        </select>
+      </div>
       <div className="mb-4">
         <label className="block mb-2 font-bold font-figtree">Select Visualization Level</label>
         <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={visualizationLevel} onChange={handleVisualizationChange}>

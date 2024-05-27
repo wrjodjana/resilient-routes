@@ -29,7 +29,8 @@ const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenari
       return;
     }
 
-    if (parseInt(startPlace) > 38 || parseInt(startPlace) < 0 || parseInt(endPlace) > 38 || parseInt(endPlace) < 0) {
+    if (parseInt(startPlace) > 102 || parseInt(startPlace) < 0 || parseInt(endPlace) > 102 || parseInt(endPlace) < 0) {
+      // add conditions for the different graphs
       setError("Invalid node IDs provided");
       return;
     }
@@ -74,10 +75,11 @@ const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenari
     <div className="w-1/4 p-4 shadow bg-lightBlue">
       <h2 className="text-xl font-bold mb-4 text-cyan mt-3">Graph Neural Network Visualization</h2>
       <div className="mb-4">
-        <label className="block mb-2 font-bold font-figtree">Select Map</label>
+        <label className="block mb-2 font-bold font-figtree">Select Dataset</label>
         <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={selectedMap} onChange={handleMapChange}>
-          <option value="map1">Bay Area Map 1</option>
-          <option value="map2">Bay Area Map 2</option>
+          <option value="connectivity_graph_small">Small Graph</option>
+          <option value="connectivity_graph_middle">Middle Graph</option>
+          <option value="connectivity_graph_large">Large Graph</option>
         </select>
       </div>
       <div className="mb-4">

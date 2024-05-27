@@ -63,10 +63,10 @@ const BaseMap = () => {
   const [runRoadScenario, setRunRoadScenario] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [visualizationLevel, setVisualizationLevel] = useState<string>("scenario1");
-  const [selectedMap, setSelectedMap] = useState<string>("map1");
+  const [selectedMap, setSelectedMap] = useState<string>("connectivity_graph_small");
 
   useEffect(() => {
-    fetch("http://localhost:5000/data")
+    fetch(`http://localhost:5000/data/${selectedMap}`)
       .then((response) => response.json())
       .then((data: Data) => {
         setData(data);
@@ -75,10 +75,10 @@ const BaseMap = () => {
         console.error("Error fetching data:", error);
         setError("Failed to load data. Please try again later.");
       });
-  }, []);
+  }, [selectedMap]); // Dependency on selectedMap to refetch when it changes
 
   useEffect(() => {
-    fetch("http://localhost:5000/data/bridges")
+    fetch(`http://localhost:5000/data/bridges/${selectedMap}`)
       .then((response) => response.json())
       .then((data: BridgeData) => {
         setBridgeData(data);
@@ -87,10 +87,10 @@ const BaseMap = () => {
         console.error("Error fetching data:", error);
         setError("Failed to load data. Please try again later.");
       });
-  }, []);
+  }, [selectedMap]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/data/roads")
+    fetch(`http://localhost:5000/data/roads/${selectedMap}`)
       .then((response) => response.json())
       .then((data: RoadData) => {
         setRoadData(data);
@@ -99,7 +99,7 @@ const BaseMap = () => {
         console.error("Error fetching data:", error);
         setError("Failed to load data. Please try again later.");
       });
-  }, []);
+  }, [selectedMap]);
 
   const handleRunAllScenarios = () => {
     setRunAllScenarios(true);

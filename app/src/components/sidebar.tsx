@@ -5,18 +5,17 @@ interface SidebarProps {
   setSelectedNodeData: (data: any) => void;
   runAllScenarios: () => void;
   runBridgeScenario: () => void;
-  runRoadScenario: () => void;
   reset: () => void;
   setVisualizationLevel: (level: string) => void;
   setMap: (mapName: string) => void;
 }
 
-const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenario, runRoadScenario, setVisualizationLevel, setMap }: SidebarProps) => {
+const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenario, setVisualizationLevel, setMap }: SidebarProps) => {
   const [startPlace, setStartPlace] = useState<string>("");
   const [endPlace, setEndPlace] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [visualizationLevel, setVisualizationLevelState] = useState<string>("scenario1");
-  const [selectedMap, setSelectedMap] = useState<string>("map1");
+  const [selectedMap, setSelectedMap] = useState<string>("connectivity_graph_small");
 
   const handleRunScenario = async (event: { preventDefault: () => void }) => {
     event.preventDefault();
@@ -36,7 +35,7 @@ const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenari
     }
 
     try {
-      const response = await axios.get(`http://localhost:5000/data/nodes?node1=${startPlace}&node2=${endPlace}`);
+      const response = await axios.get(`http://localhost:5000/data/nodes/${selectedMap}?node1=${startPlace}&node2=${endPlace}`);
       if (response.data.error) {
         setError(response.data.error);
         setSelectedNodeData(null);
@@ -62,7 +61,7 @@ const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenari
     const level = event.target.value;
     setVisualizationLevelState(level);
     setVisualizationLevel(level);
-    setSelectedMap("map1");
+    setSelectedMap("connectivity_graph_small");
   };
 
   const handleMapChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -116,10 +115,6 @@ const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenari
 
       <button onClick={runBridgeScenario} className="mt-4 px-4 py-2 bg-orange-500 text-white rounded font-figtree w-full">
         Run Bridge Scenarios
-      </button>
-
-      <button onClick={runRoadScenario} className="mt-4 px-4 py-2 bg-purple-500 text-white rounded font-figtree w-full">
-        Run Road Scenarios
       </button>
 
       <button onClick={handleReset} className="mt-4 px-4 py-2 border border-gray-300 rounded font-figtree w-full">

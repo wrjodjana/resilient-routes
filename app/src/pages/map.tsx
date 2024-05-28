@@ -31,8 +31,8 @@ interface NodeData {
 }
 
 interface BridgeInfo {
-  node1: number;
-  node2: number;
+  latitude: number;
+  longitude: number;
   series_id: number;
   bridge_class: number;
   bridge_id: string;
@@ -43,24 +43,15 @@ interface BridgeInfo {
 }
 
 interface BridgeData {
-  map_nodes: MapNode;
-  edges: number[][];
   bridges: BridgeInfo[];
-}
-
-interface RoadData {
-  roads: number[][];
-  map_nodes: MapNode;
 }
 
 const BaseMap = () => {
   const [selectedNodeData, setSelectedNodeData] = useState<NodeData | null>(null);
   const [data, setData] = useState<Data | null>(null);
   const [bridgeData, setBridgeData] = useState<BridgeData | null>(null);
-  const [roadData, setRoadData] = useState<RoadData | null>(null);
   const [runAllScenarios, setRunAllScenarios] = useState<boolean>(false);
   const [runBridgeScenario, setRunBridgeScenario] = useState<boolean>(false);
-  const [runRoadScenario, setRunRoadScenario] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [visualizationLevel, setVisualizationLevel] = useState<string>("scenario1");
   const [selectedMap, setSelectedMap] = useState<string>("connectivity_graph_small");
@@ -75,25 +66,13 @@ const BaseMap = () => {
         console.error("Error fetching data:", error);
         setError("Failed to load data. Please try again later.");
       });
-  }, [selectedMap]); // Dependency on selectedMap to refetch when it changes
+  }, [selectedMap]);
 
   useEffect(() => {
     fetch(`http://localhost:5000/data/bridges/${selectedMap}`)
       .then((response) => response.json())
       .then((data: BridgeData) => {
         setBridgeData(data);
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-        setError("Failed to load data. Please try again later.");
-      });
-  }, [selectedMap]);
-
-  useEffect(() => {
-    fetch(`http://localhost:5000/data/roads/${selectedMap}`)
-      .then((response) => response.json())
-      .then((data: RoadData) => {
-        setRoadData(data);
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
@@ -109,15 +88,10 @@ const BaseMap = () => {
     setRunBridgeScenario(true);
   };
 
-  const handleRunRoadScenario = () => {
-    setRunRoadScenario(true);
-  };
-
   const handleReset = () => {
     setSelectedNodeData(null);
     setRunAllScenarios(false);
     setRunBridgeScenario(false);
-    setRunRoadScenario(false);
     setError("");
   };
 
@@ -193,93 +167,32 @@ const BaseMap = () => {
           )}
           {bridgeData && runBridgeScenario && (
             <>
-              {bridgeData &&
-                bridgeData.bridges &&
-                visualizationLevel !== "scenario2" &&
-                bridgeData.bridges.map((bridge, index) => (
-                  <Polyline
-                    key={index}
-                    positions={[
-                      [bridgeData.map_nodes.lats[bridge.node1], bridgeData.map_nodes.lons[bridge.node1]],
-                      [bridgeData.map_nodes.lats[bridge.node2], bridgeData.map_nodes.lons[bridge.node2]],
-                    ]}
-                    color="red"
-                  >
-                    {" "}
-                    <Popup>
-                      Bridge ID: {bridge.bridge_id}
-                      <br />
-                      Series ID: {bridge.series_id}
-                      <br />
-                      Bridge Class: {bridge.bridge_class}
-                      <br />
-                      Skew: {bridge.skew} degrees
-                      <br />
-                      Number of Spans: {bridge.num_span}
-                      <br />
-                      Max Span Length: {bridge.max_span_length} m
-                      <br />
-                      Total Length: {bridge.total_length} m
-                    </Popup>
-                  </Polyline>
-                ))}
-              {bridgeData &&
-                visualizationLevel !== "scenario3" &&
-                bridgeData.map_nodes.ids.map((id: number, index: number) => (
-                  <CircleMarker key={id} center={[bridgeData.map_nodes.lats[index], bridgeData.map_nodes.lons[index]]} radius={5} fillOpacity={1}>
-                    <Popup>
-                      Node ID: {id}
-                      <br />
-                      Latitude: {bridgeData.map_nodes.lats[index]}
-                      <br />
-                      Longitude: {bridgeData.map_nodes.lons[index]}
-                    </Popup>
-                  </CircleMarker>
-                ))}
-            </>
-          )}
-
-          {roadData && runRoadScenario && (
-            <>
-              {roadData &&
-                roadData.roads &&
-                visualizationLevel !== "scenario2" &&
-                roadData.roads.map((road, index) => (
-                  <Polyline
-                    key={index}
-                    positions={[
-                      [roadData.map_nodes.lats[road[0]], roadData.map_nodes.lons[road[0]]],
-                      [roadData.map_nodes.lats[road[1]], roadData.map_nodes.lons[road[1]]],
-                    ]}
-                    color="green"
-                  />
-                ))}
-              {bridgeData &&
-                visualizationLevel !== "scenario3" &&
-                bridgeData.map_nodes.ids.map((id: number, index: number) => (
-                  <CircleMarker key={id} center={[bridgeData.map_nodes.lats[index], bridgeData.map_nodes.lons[index]]} radius={5} fillOpacity={1}>
-                    <Popup>
-                      Node ID: {id}
-                      <br />
-                      Latitude: {bridgeData.map_nodes.lats[index]}
-                      <br />
-                      Longitude: {bridgeData.map_nodes.lons[index]}
-                    </Popup>
-                  </CircleMarker>
-                ))}
+              {bridgeData.bridges.map((bridge, index) => (
+                <CircleMarker key={index} center={[bridge.latitude, bridge.longitude]} color="green" radius={5} fillOpacity={1}>
+                  <Popup>
+                    Bridge ID: {bridge.bridge_id}
+                    <br />
+                    Latitude: {bridge.latitude}
+                    <br />
+                    Longitude: {bridge.longitude}
+                    <br />
+                    Class: {bridge.bridge_class}
+                    <br />
+                    Skew: {bridge.skew}
+                    <br />
+                    Number of Spans: {bridge.num_span}
+                    <br />
+                    Max Span Length: {bridge.max_span_length}
+                    <br />
+                    Total Length: {bridge.total_length}
+                  </Popup>
+                </CircleMarker>
+              ))}
             </>
           )}
         </MapContainer>
       </div>
-      <Sidebar
-        setSelectedNodeData={setSelectedNodeData}
-        runAllScenarios={handleRunAllScenarios}
-        reset={handleReset}
-        runBridgeScenario={handleRunBridgeScenario}
-        runRoadScenario={handleRunRoadScenario}
-        setVisualizationLevel={setVisualizationLevel}
-        setMap={setSelectedMap}
-      />
+      <Sidebar setSelectedNodeData={setSelectedNodeData} runAllScenarios={handleRunAllScenarios} reset={handleReset} runBridgeScenario={handleRunBridgeScenario} setVisualizationLevel={setVisualizationLevel} setMap={setSelectedMap} />
       {error && <div className="error-message">{error}</div>}
     </div>
   );

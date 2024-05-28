@@ -119,28 +119,11 @@ def dijkstra(graph, start, end):
 ################################################
 @app.route('/data/bridges/<dataset>')
 def get_bridges_data(dataset):
-    # Load map information
-    map_csv_path = f'./{dataset}/map.csv'
-    SpreadSheet_map = np.genfromtxt(map_csv_path, delimiter=',', dtype=None, encoding='utf-8-sig')
-    colNames_map = SpreadSheet_map[0, :]
-    node_file = SpreadSheet_map[1:, :]
-    id_list = [int(id) for id in node_file[:, np.where(colNames_map == 'id')[0][0]]]
-    lat_list = [float(lat) for lat in node_file[:, np.where(colNames_map == 'lat')[0][0]]]
-    lon_list = [float(lon) for lon in node_file[:, np.where(colNames_map == 'lon')[0][0]]]
-
     # Load bridge information
     bridge_csv_path = f'./{dataset}/bridge_info.csv'
     SpreadSheet = np.genfromtxt(bridge_csv_path, delimiter=',', dtype=None, encoding='utf-8-sig')
     colNames = SpreadSheet[0, :]
     Data = SpreadSheet[1:, :]
-    node1 = [int(n) for n in Data[:, np.where(colNames == 'node1')[0][0]]]
-    node2 = [int(n) for n in Data[:, np.where(colNames == 'node2')[0][0]]]
-
-    # Load edge from pickle file
-    graph_info_path = f'./{dataset}/graph_info.pickle'
-    with open(graph_info_path, 'rb') as handle:
-        graph_info = pickle.load(handle)
-    edge_list = graph_info.get('edge_list')
 
     # Load other bridge information
     series_id = Data[:, np.where(colNames == 'serial class')[0][0]].astype(np.int32)
@@ -150,62 +133,49 @@ def get_bridges_data(dataset):
     num_span = Data[:, np.where(colNames == 'main_unit_spans_045')[0][0]].astype(np.int32)
     max_span_length = Data[:, np.where(colNames == 'max_span_len_mt_048')[0][0]].astype(np.int32)
     total_length = Data[:, np.where(colNames == 'structure_len_mt_049')[0][0]].astype(np.int32)
+    
+    def dms_to_decimal(dms, is_latitude=True):
+        degrees = int(dms / 1000000) 
+        minutes = int((dms % 1000000) / 10000)
+        seconds = (dms % 10000) / 100.0
+
+        decimal_degrees = degrees + minutes / 60 + seconds / 3600
+
+        if not is_latitude:
+            decimal_degrees *= -1
+
+        return decimal_degrees
+    
+    latitude_indices = np.where(colNames == 'lat_016')[0][0]
+    longitude_indices = np.where(colNames == 'long_017')[0][0]
+
+    latitude = np.array([dms_to_decimal(dms, is_latitude=True) for dms in Data[:, latitude_indices].astype(int)])
+    longitude = np.array([dms_to_decimal(dms, is_latitude=False) for dms in Data[:, longitude_indices].astype(int)])
+    print(latitude)
+    print(longitude)
+
 
     bridge_info = [{
-        "node1": int(n1),
-        "node2": int(n2),
         "series_id": int(series),
         "bridge_class": int(b_class),
         "bridge_id": str(b_id),
         "skew": int(sk),
         "num_span": int(num_sp),
         "max_span_length": int(max_sp_len),
-        "total_length": int(tot_len)
-    } for n1, n2, series, b_class, b_id, sk, num_sp, max_sp_len, tot_len in zip(
-        node1, node2, series_id, bridge_class, bridge_id, skew, num_span, max_span_length, total_length
+        "total_length": int(tot_len),
+        "latitude": lat,
+        "longitude": lon
+    } for series, b_class, b_id, sk, num_sp, max_sp_len, tot_len, lat, lon in zip(
+         series_id, bridge_class, bridge_id, skew, num_span, max_span_length, total_length, latitude, longitude
     )]
 
     data = {
         "bridges": bridge_info,
-        "edges": edge_list,
-        "map_nodes": {
-            "ids": id_list,
-            "lats": lat_list,
-            "lons": lon_list
-        }
     }
 
     return jsonify(data)
 
-@app.route('/data/roads/<dataset>')
-def get_road_data(dataset):
-    # Load graph information
-    graph_info_path = f'./{dataset}/graph_info.pickle'
-    print(graph_info_path)
-    with open(graph_info_path, 'rb') as handle:
-        graph_info = pickle.load(handle)
-    
-    road_list = graph_info.get('road_list')
 
-    # load map data
-    map_csv_path = f'./{dataset}/map.csv'
-    SpreadSheet_map = np.genfromtxt(map_csv_path, delimiter=',', dtype=None, encoding='utf-8-sig')
-    colNames_map = SpreadSheet_map[0, :]
-    node_file = SpreadSheet_map[1:, :]
-    id_list = [int(id) for id in node_file[:, np.where(colNames_map == 'id')[0][0]]]  # Convert to Python int
-    lat_list = [float(lat) for lat in node_file[:, np.where(colNames_map == 'lat')[0][0]]]  # Convert to Python float
-    lon_list = [float(lon) for lon in node_file[:, np.where(colNames_map == 'lon')[0][0]]]  # Convert to Python float
-
-    data = {
-        "roads": road_list,
-        "map_nodes": {
-            "ids": id_list,
-            "lats": lat_list,
-            "lons": lon_list
-        }
-
-    }
-    return jsonify(data)
 
 
 if __name__ == '__main__':

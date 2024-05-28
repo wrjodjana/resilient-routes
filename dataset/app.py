@@ -126,14 +126,10 @@ def get_bridges_data(dataset):
     Data = SpreadSheet[1:, :]
 
     # Load other bridge information
-    series_id = Data[:, np.where(colNames == 'serial class')[0][0]].astype(np.int32)
-    bridge_class = Data[:, np.where(colNames == 'NBI class')[0][0]].astype(np.int32)
     bridge_id = Data[:, np.where(colNames == 'structure member')[0][0]]
-    skew = Data[:, np.where(colNames == 'degrees_skew_034')[0][0]].astype(np.int32)
-    num_span = Data[:, np.where(colNames == 'main_unit_spans_045')[0][0]].astype(np.int32)
-    max_span_length = Data[:, np.where(colNames == 'max_span_len_mt_048')[0][0]].astype(np.int32)
-    total_length = Data[:, np.where(colNames == 'structure_len_mt_049')[0][0]].astype(np.int32)
-    
+    year_built = Data[:, np.where(colNames == 'year_built_027')[0][0]]
+    total_length = Data[:, np.where(colNames == 'structure_len_mt_049')[0][0]]
+
     def dms_to_decimal(dms, is_latitude=True):
         degrees = int(dms / 1000000) 
         minutes = int((dms % 1000000) / 10000)
@@ -151,22 +147,15 @@ def get_bridges_data(dataset):
 
     latitude = np.array([dms_to_decimal(dms, is_latitude=True) for dms in Data[:, latitude_indices].astype(int)])
     longitude = np.array([dms_to_decimal(dms, is_latitude=False) for dms in Data[:, longitude_indices].astype(int)])
-    print(latitude)
-    print(longitude)
-
 
     bridge_info = [{
-        "series_id": int(series),
-        "bridge_class": int(b_class),
         "bridge_id": str(b_id),
-        "skew": int(sk),
-        "num_span": int(num_sp),
-        "max_span_length": int(max_sp_len),
-        "total_length": int(tot_len),
+        "year_built": int(y_b),
+        "total_length": int(t_l),
         "latitude": lat,
         "longitude": lon
-    } for series, b_class, b_id, sk, num_sp, max_sp_len, tot_len, lat, lon in zip(
-         series_id, bridge_class, bridge_id, skew, num_span, max_span_length, total_length, latitude, longitude
+    } for  b_id, y_b, t_l, lat, lon in zip(
+          bridge_id, year_built, total_length, latitude, longitude
     )]
 
     data = {

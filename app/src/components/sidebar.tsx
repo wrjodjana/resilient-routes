@@ -6,15 +6,13 @@ interface SidebarProps {
   runAllScenarios: () => void;
   runBridgeScenario: () => void;
   reset: () => void;
-  setVisualizationLevel: (level: string) => void;
   setMap: (mapName: string) => void;
 }
 
-const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenario, setVisualizationLevel, setMap }: SidebarProps) => {
+const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenario, setMap }: SidebarProps) => {
   const [startPlace, setStartPlace] = useState<string>("");
   const [endPlace, setEndPlace] = useState<string>("");
   const [error, setError] = useState<string>("");
-  const [visualizationLevel, setVisualizationLevelState] = useState<string>("scenario1");
   const [selectedMap, setSelectedMap] = useState<string>("connectivity_graph_small");
 
   const handleRunScenario = async (event: { preventDefault: () => void }) => {
@@ -57,13 +55,6 @@ const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenari
     setEndPlace("");
   };
 
-  const handleVisualizationChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const level = event.target.value;
-    setVisualizationLevelState(level);
-    setVisualizationLevel(level);
-    setSelectedMap("connectivity_graph_small");
-  };
-
   const handleMapChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const mapName = event.target.value;
     setSelectedMap(mapName);
@@ -79,14 +70,6 @@ const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenari
           <option value="connectivity_graph_small">Small Graph</option>
           <option value="connectivity_graph_middle">Middle Graph</option>
           <option value="connectivity_graph_large">Large Graph</option>
-        </select>
-      </div>
-      <div className="mb-4">
-        <label className="block mb-2 font-bold font-figtree">Select Visualization Level</label>
-        <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={visualizationLevel} onChange={handleVisualizationChange}>
-          <option value="scenario1">Show on Both Levels</option>
-          <option value="scenario2">Show on Node Level</option>
-          <option value="scenario3">Show on Edge Levels</option>
         </select>
       </div>
 

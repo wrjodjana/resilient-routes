@@ -33,13 +33,9 @@ interface NodeData {
 interface BridgeInfo {
   latitude: number;
   longitude: number;
-  series_id: number;
-  bridge_class: number;
   bridge_id: string;
-  skew: number;
-  num_span: number;
-  max_span_length: number;
   total_length: number;
+  year_built: number;
 }
 
 interface BridgeData {
@@ -53,7 +49,6 @@ const BaseMap = () => {
   const [runAllScenarios, setRunAllScenarios] = useState<boolean>(false);
   const [runBridgeScenario, setRunBridgeScenario] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [visualizationLevel, setVisualizationLevel] = useState<string>("scenario1");
   const [selectedMap, setSelectedMap] = useState<string>("connectivity_graph_small");
 
   useEffect(() => {
@@ -108,8 +103,8 @@ const BaseMap = () => {
       <div className="w-5/6 h-full">
         <MapContainer center={[37.8272, -122.2913]} zoom={13} className="h-full">
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          {selectedNodeData && selectedNodeData.path && data && visualizationLevel !== "scenario2" && <Polyline positions={selectedNodeData.path.map((index) => [data.map_nodes.lats[index], data.map_nodes.lons[index]])} color="orange" />}
-          {selectedNodeData && visualizationLevel !== "scenario3" && (
+          {selectedNodeData && selectedNodeData.path && data && <Polyline positions={selectedNodeData.path.map((index) => [data.map_nodes.lats[index], data.map_nodes.lons[index]])} color="orange" />}
+          {selectedNodeData && (
             <>
               <CircleMarker center={[selectedNodeData.node1.latitude, selectedNodeData.node1.longitude]} color="blue" radius={5} fillOpacity={1}>
                 <Popup>
@@ -135,7 +130,6 @@ const BaseMap = () => {
             <>
               {data &&
                 data.edge_list &&
-                visualizationLevel !== "scenario2" &&
                 data.edge_list.map((edge, index) => (
                   <Polyline
                     key={index}
@@ -149,7 +143,6 @@ const BaseMap = () => {
                   </Polyline>
                 ))}
               {data &&
-                visualizationLevel !== "scenario3" &&
                 data.map_nodes.ids.map((id: number, index: number) => (
                   <CircleMarker key={id} center={[data.map_nodes.lats[index], data.map_nodes.lons[index]]} color={id === 17 ? "red" : getColorByValue(data.node_res[index])} radius={5} fillOpacity={1}>
                     <Popup>
@@ -172,19 +165,13 @@ const BaseMap = () => {
                   <Popup>
                     Bridge ID: {bridge.bridge_id}
                     <br />
-                    Latitude: {bridge.latitude}
+                    Latitude: {bridge.latitude.toFixed(2)}
                     <br />
-                    Longitude: {bridge.longitude}
-                    <br />
-                    Class: {bridge.bridge_class}
-                    <br />
-                    Skew: {bridge.skew}
-                    <br />
-                    Number of Spans: {bridge.num_span}
-                    <br />
-                    Max Span Length: {bridge.max_span_length}
+                    Longitude: {bridge.longitude.toFixed(2)}
                     <br />
                     Total Length: {bridge.total_length}
+                    <br />
+                    Year Built: {bridge.year_built}
                   </Popup>
                 </CircleMarker>
               ))}
@@ -192,7 +179,7 @@ const BaseMap = () => {
           )}
         </MapContainer>
       </div>
-      <Sidebar setSelectedNodeData={setSelectedNodeData} runAllScenarios={handleRunAllScenarios} reset={handleReset} runBridgeScenario={handleRunBridgeScenario} setVisualizationLevel={setVisualizationLevel} setMap={setSelectedMap} />
+      <Sidebar setSelectedNodeData={setSelectedNodeData} runAllScenarios={handleRunAllScenarios} reset={handleReset} runBridgeScenario={handleRunBridgeScenario} setMap={setSelectedMap} />
       {error && <div className="error-message">{error}</div>}
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Popup, Polyline, CircleMarker } from "react-leaflet";
 import Sidebar from "../components/sidebar";
 import "leaflet/dist/leaflet.css";
+import AllLegend from "../components/all-legend";
 
 interface MapNode {
   ids: number[];
@@ -177,6 +178,7 @@ const BaseMap = () => {
               ))}
             </>
           )}
+          {runAllScenarios && <AllLegend />}
         </MapContainer>
       </div>
       <Sidebar setSelectedNodeData={setSelectedNodeData} runAllScenarios={handleRunAllScenarios} reset={handleReset} runBridgeScenario={handleRunBridgeScenario} setMap={setSelectedMap} />

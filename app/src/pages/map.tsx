@@ -3,6 +3,8 @@ import { MapContainer, TileLayer, Popup, Polyline, CircleMarker } from "react-le
 import Sidebar from "../components/sidebar";
 import "leaflet/dist/leaflet.css";
 import AllLegend from "../components/all-legend";
+import BridgeLegend from "../components/bridge-legend";
+import SelectLegend from "../components/select-legend";
 
 interface MapNode {
   ids: number[];
@@ -104,7 +106,7 @@ const BaseMap = () => {
       <div className="w-5/6 h-full">
         <MapContainer center={[37.8272, -122.2913]} zoom={13} className="h-full">
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          {selectedNodeData && selectedNodeData.path && data && <Polyline positions={selectedNodeData.path.map((index) => [data.map_nodes.lats[index], data.map_nodes.lons[index]])} color="orange" />}
+          {selectedNodeData && selectedNodeData.path && data && <Polyline positions={selectedNodeData.path.map((index) => [data.map_nodes.lats[index], data.map_nodes.lons[index]])} color="black" />}
           {selectedNodeData && (
             <>
               <CircleMarker center={[selectedNodeData.node1.latitude, selectedNodeData.node1.longitude]} color="blue" radius={5} fillOpacity={1}>
@@ -116,7 +118,7 @@ const BaseMap = () => {
                   Longitude: {selectedNodeData.node1.longitude}
                 </Popup>
               </CircleMarker>
-              <CircleMarker center={[selectedNodeData.node2.latitude, selectedNodeData.node2.longitude]} color="blue" radius={5} fillOpacity={1}>
+              <CircleMarker center={[selectedNodeData.node2.latitude, selectedNodeData.node2.longitude]} color="red" radius={5} fillOpacity={1}>
                 <Popup>
                   Node ID: {selectedNodeData.node2.node_id}
                   <br />
@@ -125,6 +127,7 @@ const BaseMap = () => {
                   Longitude: {selectedNodeData.node2.longitude}
                 </Popup>
               </CircleMarker>
+              <SelectLegend />
             </>
           )}
           {data && runAllScenarios && (
@@ -179,6 +182,7 @@ const BaseMap = () => {
             </>
           )}
           {runAllScenarios && <AllLegend />}
+          {runBridgeScenario && <BridgeLegend />}
         </MapContainer>
       </div>
       <Sidebar setSelectedNodeData={setSelectedNodeData} runAllScenarios={handleRunAllScenarios} reset={handleReset} runBridgeScenario={handleRunBridgeScenario} setMap={setSelectedMap} />

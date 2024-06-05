@@ -176,12 +176,22 @@ def get_traffic_data():
     lat_list = [float(lat) for lat in node_file[:, np.where(colNames_traffic == 'lat')[0][0]]]
     lon_list = [float(lon) for lon in node_file[:, np.where(colNames_traffic == 'lon')[0][0]]]
 
+    edge_csv = './sta_siouxfalls/Ca_list.csv'
+    SpreadSheet_edges = np.genfromtxt(edge_csv, delimiter=',', dtype=None, encoding='utf-8-sig', names=True)
+    edges = [{
+        "init_node": int(row['init_node']),
+        "term_node": int(row['term_node']),
+        "capacity": float(row['capacity']),
+        "length": float(row['length'])
+    } for row in SpreadSheet_edges]
+
     data = {
         "map_nodes": {
             "ids": id_list,
             "lats": lat_list,
             "lons": lon_list
         },
+        "edges": edges
     }
     
     return jsonify(data)

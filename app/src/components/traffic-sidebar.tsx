@@ -18,7 +18,7 @@ const TrafficSidebar = ({ runTrafficScenario, reset }: SidebarProps) => {
   return (
     <div className="w-1/4 p-4 shadow bg-lightBlue">
       <button onClick={runTrafficScenario} className="mt-4 px-4 py-2 bg-green-500 text-white rounded font-figtree w-full">
-        Run Traffic Scenarios
+        Run Traffic Scenarios for Sioux Falls
       </button>
 
       <button onClick={handleReset} className="mt-4 px-4 py-2 border border-gray-300 rounded font-figtree w-full">

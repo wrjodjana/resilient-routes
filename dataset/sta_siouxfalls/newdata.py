@@ -25,7 +25,7 @@ csv_data = '''1 -96.770420 43.612828 0.229676 1.000000
 23 -96.750904 43.514858 0.424925 0.197763
 24 -96.749200 43.503164 0.441973 0.102005'''
 
-header = ['ID', 'Longitude', 'Latitude', 'NormalizedLongitude', 'NormalizedLatitude']
+header = ['id', 'lon', 'lat', 'NormalizedLongitude', 'NormalizedLatitude']
 
 lines = csv_data.split('\n')
 

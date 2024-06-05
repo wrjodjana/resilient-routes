@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
 
 interface SidebarProps {
   setSelectedNodeData: (data: any) => void;
@@ -102,6 +103,10 @@ const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenari
 
       <button onClick={handleReset} className="mt-4 px-4 py-2 border border-gray-300 rounded font-figtree w-full">
         Reset
+      </button>
+
+      <button className="mt-4 px-4 py-2 border bg-yellow-500 text-white border-gray-300 rounded font-figtree w-full">
+        <Link to="/traffic-map">Go to Traffic Map</Link>
       </button>
     </div>
   );

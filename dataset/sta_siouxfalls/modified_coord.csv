@@ -1,4 +1,4 @@
-ID,Longitude,Latitude,NormalizedLongitude,NormalizedLatitude
+id,lon,lat,NormalizedLongitude,NormalizedLatitude
 1,-96.770420,43.612828,0.229676,1.000000
 2,-96.711251,43.605813,0.821638,0.942557
 3,-96.774303,43.572962,0.190828,0.673553

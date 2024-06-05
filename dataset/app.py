@@ -164,6 +164,28 @@ def get_bridges_data(dataset):
 
     return jsonify(data)
 
+################################################
+
+@app.route('/data/traffic')
+def get_traffic_data():
+    traffic_csv = './sta_siouxfalls/modified_coord.csv'
+    SpreadSheet_traffic = np.genfromtxt(traffic_csv, delimiter=',', dtype=None, encoding='utf-8-sig')
+    colNames_traffic = SpreadSheet_traffic[0, :]
+    node_file = SpreadSheet_traffic[1:, :]
+    id_list = [int(id) for id in node_file[:, np.where(colNames_traffic == 'id')[0][0]]]
+    lat_list = [float(lat) for lat in node_file[:, np.where(colNames_traffic == 'lat')[0][0]]]
+    lon_list = [float(lon) for lon in node_file[:, np.where(colNames_traffic == 'lon')[0][0]]]
+
+    data = {
+        "map_nodes": {
+            "ids": id_list,
+            "lats": lat_list,
+            "lons": lon_list
+        },
+    }
+    
+    return jsonify(data)
+
 
 
 

@@ -53,10 +53,11 @@ const TrafficMap = () => {
     const saturation = 100 - (capacity / maxCapacity) * 50;
     return `hsl(30, ${saturation}%, ${lightness}%)`;
   };
+
   return (
     <div className="flex h-screen">
       <div className="w-5/6 h-full">
-        <MapContainer center={[37.8272, -122.2913]} zoom={13} className="h-full">
+        <MapContainer center={[43.546, -96.7313]} zoom={12} className="h-full">
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           {trafficData && runTrafficScenario && (
             <>

@@ -104,7 +104,7 @@ const BaseMap = () => {
     <div className="flex h-screen">
       {error && <div className="alert alert-error">{error}</div>}
       <div className="w-5/6 h-full">
-        <MapContainer center={[37.8272, -122.2913]} zoom={13} className="h-full">
+        <MapContainer center={[37.3387, -121.8853]} zoom={12} className="h-full">
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           {selectedNodeData && selectedNodeData.path && data && <Polyline positions={selectedNodeData.path.map((index) => [data.map_nodes.lats[index], data.map_nodes.lons[index]])} color="black" />}
           {selectedNodeData && (

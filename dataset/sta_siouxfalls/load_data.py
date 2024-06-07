@@ -14,5 +14,6 @@ with open('./data_0.pickle', 'rb') as handle:
 
 # visualize on the node:
 # demand_matrix
+print(graph_info)
 print(graph_info.keys())
 

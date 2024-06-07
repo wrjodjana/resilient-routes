@@ -1,6 +1,5 @@
 import networkx as nx
 import numpy as np
-import pickle5 as pickle
 import matplotlib.pyplot as plt
 
 ################# ## check zone in each graph
@@ -11,13 +10,13 @@ max_cap *= 10
 edge_vmax *= 10
 
 G = nx.DiGraph()
-ca_list = np.loadtxt('./{}/Ca_list.csv'.format(map_name), delimiter=',', skiprows=1)
+ca_list = np.loadtxt('Ca_list.csv'.format(map_name), delimiter=',', skiprows=1)
 for edge_ca in ca_list:
     # build graph
     G.add_edge(int(np.round(edge_ca[0])), int(np.round(edge_ca[1])), weight=edge_ca[2]*10)
 
 if 'EMA' in map_name:
-    node_list = np.loadtxt('./{}/coord.csv'.format(map_name), delimiter=',', encoding='utf-8-sig')
+    node_list = np.loadtxt('coord.csv'.format(map_name), delimiter=',', encoding='utf-8-sig')
 
 if 'EMA' in map_name:
     x_min, x_max, x_scale = -70.674213, -71.600974, abs(-70.674213 + 71.600974)
@@ -61,4 +60,4 @@ plt.xlabel('Longitude')
 plt.ylabel('Latitude')
 plt.tight_layout()
 
-plt.savefig('./map/{}.jpg'.format(map_name))
+plt.savefig('map.jpg'.format(map_name))

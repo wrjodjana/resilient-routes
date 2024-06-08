@@ -20,6 +20,7 @@
     "axios": "^1.6.8",
     "django": "^1.0.0",
     "leaflet": "^1.9.4",
+    "leaflet-arrowheads": "^1.4.0",
     "mapbox": "^1.0.0-beta10",
     "mapbox-gl": "^3.3.0",
     "react": "^18.3.1",

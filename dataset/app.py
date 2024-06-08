@@ -166,7 +166,37 @@ def get_bridges_data(dataset):
 
 ################################################
 
+@app.route('/data/matrix/<dataset>')
+def get_matrix_data(dataset):
 
+    node_csv = f'./{dataset}/modified_coord.csv'
+    SpreadSheet_traffic = np.genfromtxt(node_csv, delimiter=',', dtype=None, encoding='utf-8-sig')
+    colNames_traffic = SpreadSheet_traffic[0, :]
+    node_file = SpreadSheet_traffic[1:, :]
+    id_list = [int(id) for id in node_file[:, np.where(colNames_traffic == 'id')[0][0]]]
+    lat_list = [float(lat) for lat in node_file[:, np.where(colNames_traffic == 'lat')[0][0]]]
+    lon_list = [float(lon) for lon in node_file[:, np.where(colNames_traffic == 'lon')[0][0]]]
+
+    matrix_path = f'./{dataset}/data_0.pickle'
+    with open(matrix_path, 'rb') as handle:
+        matrix_graph = pickle.load(handle)
+
+    od_demand = matrix_graph.get('demand_matrix')
+    print(od_demand.tolist())
+
+
+
+    data = {
+        "matrix": od_demand.tolist(),
+        "map_nodes": {
+            "ids": id_list,
+            "lats": lat_list,
+            "lons": lon_list
+        },
+    }
+
+    
+    return jsonify(data)
 
 
 

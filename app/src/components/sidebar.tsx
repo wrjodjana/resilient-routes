@@ -28,7 +28,6 @@ const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenari
     }
 
     if (parseInt(startPlace) > 102 || parseInt(startPlace) < 0 || parseInt(endPlace) > 102 || parseInt(endPlace) < 0) {
-      // add conditions for the different graphs
       setError("Invalid node IDs provided");
       return;
     }
@@ -79,11 +78,11 @@ const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenari
         <form onSubmit={handleRunScenario}>
           <div className="mb-2">
             <label className="block mb-1 font-bold font-figtree">Start Place</label>
-            <input type="text" className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={startPlace} onChange={(e) => setStartPlace(e.target.value)} />
+            <input type="text" className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" placeholder="Enter Start Place" value={startPlace} onChange={(e) => setStartPlace(e.target.value)} />
           </div>
           <div className="mb-2">
             <label className="block mb-1 font-bold font-figtree">End Place</label>
-            <input type="text" className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={endPlace} onChange={(e) => setEndPlace(e.target.value)} />
+            <input type="text" className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" placeholder="Enter End Place" value={endPlace} onChange={(e) => setEndPlace(e.target.value)} />
           </div>
           <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded font-figtree w-full">
             Run Scenario

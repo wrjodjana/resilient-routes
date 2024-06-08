@@ -5,9 +5,12 @@ interface SidebarProps {
   reset: () => void;
   setMap: (mapName: string) => void;
   addNodeId: (nodeId: number) => void;
+  runRatioScenarios: () => void;
+  runFlowScenarios: () => void;
+  runCapacityScenarios: () => void;
 }
 
-const TrafficSidebar = ({ reset, setMap, addNodeId }: SidebarProps) => {
+const TrafficSidebar = ({ reset, setMap, addNodeId, runRatioScenarios, runFlowScenarios, runCapacityScenarios }: SidebarProps) => {
   const [error, setError] = useState<string>("");
   const [selectedMap, setSelectedMap] = useState<string>("sta_siouxfalls");
   const [nodeId, setNodeId] = useState<number | "">("");
@@ -72,6 +75,18 @@ const TrafficSidebar = ({ reset, setMap, addNodeId }: SidebarProps) => {
         </button>
       </div>
       {error && <div className="text-red mb-2">{error}</div>}
+      <button onClick={runRatioScenarios} className="mt-4 px-4 py-2 border bg-green-500 text-white border-gray-300 rounded font-figtree w-full">
+        Run Ratio Scenarios
+      </button>
+
+      <button onClick={runFlowScenarios} className="mt-4 px-4 py-2 border bg-orange-500 text-white border-gray-300 rounded font-figtree w-full">
+        Run Flow Scenarios
+      </button>
+
+      <button onClick={runCapacityScenarios} className="mt-4 px-4 py-2 border bg-purple-500 text-white border-gray-300 rounded font-figtree w-full">
+        Run Capacity Scenarios
+      </button>
+
       <button onClick={handleReset} className="mt-4 px-4 py-2 border border-gray-300 rounded font-figtree w-full">
         Reset
       </button>

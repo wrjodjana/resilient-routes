@@ -198,6 +198,41 @@ def get_matrix_data(dataset):
     
     return jsonify(data)
 
+@app.route('/data/traffic/<dataset>')
+def get_traffic_data(dataset):
+    traffic_path = f'./{dataset}/data_0.pickle'
+    with open(traffic_path, 'rb') as handle:
+        traffic_graph = pickle.load(handle)
+
+    # Convert tuple keys to string keys for JSON serialization
+    def convert_keys(data):
+        return {str(key): value for key, value in data.items()}
+
+    ratio = convert_keys(traffic_graph.get('ratio', {}))    
+    flow = convert_keys(traffic_graph.get('flow', {}))
+    capacity = convert_keys(traffic_graph.get('capacity', {}))
+    
+    node_csv = f'./{dataset}/modified_coord.csv'
+    SpreadSheet_traffic = np.genfromtxt(node_csv, delimiter=',', dtype=None, encoding='utf-8-sig')
+    colNames_traffic = SpreadSheet_traffic[0, :]
+    node_file = SpreadSheet_traffic[1:, :]
+    id_list = [int(id) for id in node_file[:, np.where(colNames_traffic == 'id')[0][0]]]
+    lat_list = [float(lat) for lat in node_file[:, np.where(colNames_traffic == 'lat')[0][0]]]
+    lon_list = [float(lon) for lon in node_file[:, np.where(colNames_traffic == 'lon')[0][0]]]
+
+    data = {
+        "ratio": ratio,
+        "flow": flow,
+        "capacity": capacity,
+        "map_nodes": {
+            "ids": id_list,
+            "lats": lat_list,
+            "lons": lon_list
+        },
+    }
+
+    return jsonify(data)
+
 
 
 if __name__ == '__main__':

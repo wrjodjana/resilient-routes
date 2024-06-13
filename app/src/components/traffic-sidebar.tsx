@@ -59,6 +59,7 @@ const TrafficSidebar = ({ reset, setMap, addNodeId, runRatioScenarios, runFlowSc
 
   return (
     <div className="w-1/4 p-4 shadow bg-lightBlue">
+      <h2 className="text-xl font-bold mb-4 text-cyan mt-3">Traffic Visualization</h2>
       <div className="mb-4">
         <label className="block mb-2 font-bold font-figtree">Select Dataset</label>
         <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={selectedMap} onChange={handleMapChange}>

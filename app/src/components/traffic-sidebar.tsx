@@ -63,7 +63,7 @@ const TrafficSidebar = ({ reset, setMap, addNodeId, runRatioScenarios, runFlowSc
         <label className="block mb-2 font-bold font-figtree">Select Dataset</label>
         <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={selectedMap} onChange={handleMapChange}>
           <option value="sta_siouxfalls">Sioux Falls</option>
-          <option value="sta_EMA">Eastern Massachussets Network (EMA)</option>
+          <option value="sta_EMA">Eastern Massachussets Network</option>
           <option value="sta_anaheim">Anaheim</option>
         </select>
       </div>

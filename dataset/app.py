@@ -198,15 +198,19 @@ def get_matrix_data(dataset):
     
     return jsonify(data)
 
+def convert_keys(data):
+    new_data = {}
+    for (start, end), value in data.items():
+        # Increment both start and end node IDs and convert to string key
+        new_key = f"{start + 1}-{end + 1}"
+        new_data[new_key] = value
+    return new_data
+
 @app.route('/data/traffic/<dataset>')
 def get_traffic_data(dataset):
     traffic_path = f'./{dataset}/data_0.pickle'
     with open(traffic_path, 'rb') as handle:
         traffic_graph = pickle.load(handle)
-
-    # Convert tuple keys to string keys for JSON serialization
-    def convert_keys(data):
-        return {str(key): value for key, value in data.items()}
 
     ratio = convert_keys(traffic_graph.get('ratio', {}))    
     flow = convert_keys(traffic_graph.get('flow', {}))
@@ -220,6 +224,15 @@ def get_traffic_data(dataset):
     lat_list = [float(lat) for lat in node_file[:, np.where(colNames_traffic == 'lat')[0][0]]]
     lon_list = [float(lon) for lon in node_file[:, np.where(colNames_traffic == 'lon')[0][0]]]
 
+    edge_csv = f'./{dataset}/Ca_list.csv'
+    SpreadSheet_edges = np.genfromtxt(edge_csv, delimiter=',', dtype=None, encoding='utf-8-sig', names=True)
+    edges = [{
+        "init_node": int(row['init_node']),
+        "term_node": int(row['term_node']),
+        "capacity": float(row['capacity']),
+        "length": float(row['length'])
+    } for row in SpreadSheet_edges]
+
     data = {
         "ratio": ratio,
         "flow": flow,
@@ -229,6 +242,7 @@ def get_traffic_data(dataset):
             "lats": lat_list,
             "lons": lon_list
         },
+        "edges": edges
     }
 
     return jsonify(data)

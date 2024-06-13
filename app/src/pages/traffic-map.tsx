@@ -71,15 +71,24 @@ const TrafficMap = () => {
   };
 
   const runRatioScenarios = () => {
+    setSelectedNodeId(null);
     setRatioScenarios(true);
+    setFlowScenarios(false);
+    setCapacityScenarios(false);
   };
 
   const runFlowScenarios = () => {
+    setSelectedNodeId(null);
     setFlowScenarios(true);
+    setRatioScenarios(false);
+    setCapacityScenarios(false);
   };
 
   const runCapacityScenarios = () => {
+    setSelectedNodeId(null);
     setCapacityScenarios(true);
+    setRatioScenarios(false);
+    setFlowScenarios(false);
   };
 
   const ArrowedPolyline = ({ positions }: { positions: [number, number][][] }) => {
@@ -94,10 +103,10 @@ const TrafficMap = () => {
       const firstSegment = [start, midPoint];
       const secondSegment = [midPoint, end];
 
-      const polyline1 = L.polyline([firstSegment], { color: "black", weight: 2, opacity: 0.75, pane: "polylines" }).addTo(map);
-      polyline1.arrowheads({ size: "10px", frequency: "endonly", fill: true, color: "black" });
+      const polyline1 = L.polyline([firstSegment], { color: "blue", weight: 2, opacity: 0.75, pane: "polylines" }).addTo(map);
+      polyline1.arrowheads({ size: "10px", frequency: "endonly", fill: true, color: "blue" });
 
-      const polyline2 = L.polyline([secondSegment], { color: "black", weight: 2, opacity: 0.75, pane: "polylines" }).addTo(map);
+      const polyline2 = L.polyline([secondSegment], { color: "blue", weight: 2, opacity: 0.75, pane: "polylines" }).addTo(map);
 
       return () => {
         map.removeLayer(polyline1);
@@ -108,10 +117,28 @@ const TrafficMap = () => {
     return null;
   };
 
-  const parseKey = (key: string): [number, number] => {
-    const match = key.match(/\((\d+), (\d+)\)/);
-    return [parseInt(match![1], 10), parseInt(match![2], 10)];
-  };
+  function parseKey(key: string): [number | null, number | null] {
+    if (!key) {
+      console.error("parseKey was called with an empty key.");
+      return [null, null]; // Return null or a default value that your logic can handle.
+    }
+
+    const parts = key.split("-");
+    if (parts.length !== 2) {
+      console.error(`parseKey received a key in an unexpected format: ${key}`);
+      return [null, null]; // Return null or a default value that your logic can handle.
+    }
+
+    const startId = parseInt(parts[0], 10);
+    const endId = parseInt(parts[1], 10);
+
+    if (isNaN(startId) || isNaN(endId)) {
+      console.error(`parseKey received non-numeric IDs from key: ${key}`);
+      return [null, null]; // Return null or a default value that your logic can handle.
+    }
+
+    return [startId, endId];
+  }
 
   function getColorRatioByValue(value: number) {
     const hue = 240;
@@ -221,6 +248,10 @@ const TrafficMap = () => {
               {trafficData &&
                 Object.entries(trafficData.ratio).map(([key, ratio]) => {
                   const [startId, endId] = parseKey(key);
+                  if (startId === null || endId === null) {
+                    return;
+                  }
+
                   const startIndex = trafficData.map_nodes.ids.indexOf(startId);
                   const endIndex = trafficData.map_nodes.ids.indexOf(endId);
 
@@ -262,6 +293,11 @@ const TrafficMap = () => {
               {trafficData &&
                 Object.entries(trafficData.flow).map(([key, flow]) => {
                   const [startId, endId] = parseKey(key);
+                  if (startId === null || endId === null) {
+                    // Handle the error appropriately, perhaps skip processing this key
+                    return;
+                  }
+
                   const startIndex = trafficData.map_nodes.ids.indexOf(startId);
                   const endIndex = trafficData.map_nodes.ids.indexOf(endId);
 
@@ -303,6 +339,11 @@ const TrafficMap = () => {
               {trafficData &&
                 Object.entries(trafficData.capacity).map(([key, capacity]) => {
                   const [startId, endId] = parseKey(key);
+                  if (startId === null || endId === null) {
+                    // Handle the error appropriately, perhaps skip processing this key
+                    return;
+                  }
+
                   const startIndex = trafficData.map_nodes.ids.indexOf(startId);
                   const endIndex = trafficData.map_nodes.ids.indexOf(endId);
 

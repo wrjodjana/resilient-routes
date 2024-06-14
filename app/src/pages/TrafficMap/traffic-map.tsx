@@ -1,29 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap, Pane, Polyline } from "react-leaflet";
-import TrafficSidebar from "../components/traffic-sidebar";
+import { TrafficSidebar } from "../../components/Sidebar/TrafficMapSidebar/traffic-sidebar.tsx";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "leaflet-arrowheads";
+import { MatrixData, TrafficData } from "./traffic-map";
+import DemandLegend from "../../components/Legend/demand-legend.tsx";
 
-interface MapNode {
-  ids: number[];
-  lats: number[];
-  lons: number[];
-}
-
-interface MatrixData {
-  map_nodes: MapNode;
-  matrix: number[][];
-}
-
-interface TrafficData {
-  ratio: { [key: string]: number };
-  map_nodes: MapNode;
-  flow: { [key: string]: number };
-  capacity: { [key: string]: number };
-}
-
-const TrafficMap = () => {
+export const TrafficMap = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedMap, setSelectedMap] = useState<string>("sta_siouxfalls");
   const [matrixData, setMatrixData] = useState<MatrixData | null>(null);
@@ -294,7 +278,6 @@ const TrafficMap = () => {
                 Object.entries(trafficData.flow).map(([key, flow]) => {
                   const [startId, endId] = parseKey(key);
                   if (startId === null || endId === null) {
-                    // Handle the error appropriately, perhaps skip processing this key
                     return;
                   }
 
@@ -340,7 +323,6 @@ const TrafficMap = () => {
                 Object.entries(trafficData.capacity).map(([key, capacity]) => {
                   const [startId, endId] = parseKey(key);
                   if (startId === null || endId === null) {
-                    // Handle the error appropriately, perhaps skip processing this key
                     return;
                   }
 
@@ -365,11 +347,10 @@ const TrafficMap = () => {
                 })}
             </>
           )}
+          {selectedNodeId && <DemandLegend />}
         </MapContainer>
       </div>
       <TrafficSidebar reset={handleReset} setMap={setSelectedMap} addNodeId={handleAddNodeId} runRatioScenarios={runRatioScenarios} runFlowScenarios={runFlowScenarios} runCapacityScenarios={runCapacityScenarios} />
     </div>
   );
 };
-
-export default TrafficMap;

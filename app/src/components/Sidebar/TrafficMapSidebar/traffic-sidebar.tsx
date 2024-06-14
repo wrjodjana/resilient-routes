@@ -1,16 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { SidebarProps } from "./traffic-sidebar";
 
-interface SidebarProps {
-  reset: () => void;
-  setMap: (mapName: string) => void;
-  addNodeId: (nodeId: number) => void;
-  runRatioScenarios: () => void;
-  runFlowScenarios: () => void;
-  runCapacityScenarios: () => void;
-}
-
-const TrafficSidebar = ({ reset, setMap, addNodeId, runRatioScenarios, runFlowScenarios, runCapacityScenarios }: SidebarProps) => {
+export const TrafficSidebar = ({ reset, setMap, addNodeId, runRatioScenarios, runFlowScenarios, runCapacityScenarios }: SidebarProps) => {
   const [error, setError] = useState<string>("");
   const [selectedMap, setSelectedMap] = useState<string>("sta_siouxfalls");
   const [nodeId, setNodeId] = useState<number | "">("");

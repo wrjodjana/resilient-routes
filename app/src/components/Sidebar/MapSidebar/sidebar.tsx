@@ -1,16 +1,9 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { SidebarProps } from "./sidebar";
 
-interface SidebarProps {
-  setSelectedNodeData: (data: any) => void;
-  runAllScenarios: () => void;
-  runBridgeScenario: () => void;
-  reset: () => void;
-  setMap: (mapName: string) => void;
-}
-
-const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenario, setMap }: SidebarProps) => {
+export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenario, setMap }: SidebarProps) => {
   const [startPlace, setStartPlace] = useState<string>("");
   const [endPlace, setEndPlace] = useState<string>("");
   const [error, setError] = useState<string>("");
@@ -110,5 +103,3 @@ const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenari
     </div>
   );
 };
-
-export default Sidebar;

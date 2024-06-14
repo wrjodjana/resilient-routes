@@ -1,51 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Popup, Polyline, CircleMarker } from "react-leaflet";
-import Sidebar from "../components/sidebar";
+import { Sidebar } from "../../components/Sidebar/MapSidebar/sidebar.tsx";
 import "leaflet/dist/leaflet.css";
-import AllLegend from "../components/all-legend";
-import BridgeLegend from "../components/bridge-legend";
-import SelectLegend from "../components/select-legend";
+import AllLegend from "../../components/Legend/all-legend.tsx";
+import BridgeLegend from "../../components/Legend/bridge-legend.tsx";
+import SelectLegend from "../../components/Legend/select-legend.tsx";
+import { MapNode, Data, NodeData, BridgeInfo, BridgeData } from "./map";
 
-interface MapNode {
-  ids: number[];
-  lats: number[];
-  lons: number[];
-}
-
-interface Data {
-  map_nodes: MapNode;
-  edge_list: number[][];
-  node_res: number[];
-  edge_feat: number[][];
-}
-
-interface NodeData {
-  node1: {
-    latitude: number;
-    longitude: number;
-    node_id: string;
-  };
-  node2: {
-    latitude: number;
-    longitude: number;
-    node_id: string;
-  };
-  path?: number[];
-}
-
-interface BridgeInfo {
-  latitude: number;
-  longitude: number;
-  bridge_id: string;
-  total_length: number;
-  year_built: number;
-}
-
-interface BridgeData {
-  bridges: BridgeInfo[];
-}
-
-const BaseMap = () => {
+export const BaseMap = () => {
   const [selectedNodeData, setSelectedNodeData] = useState<NodeData | null>(null);
   const [data, setData] = useState<Data | null>(null);
   const [bridgeData, setBridgeData] = useState<BridgeData | null>(null);
@@ -141,7 +103,7 @@ const BaseMap = () => {
                       [data.map_nodes.lats[edge[0]], data.map_nodes.lons[edge[0]]],
                       [data.map_nodes.lats[edge[1]], data.map_nodes.lons[edge[1]]],
                     ]}
-                    color="black"
+                    pathOptions={{ color: "black" }}
                   >
                     <Popup>Edge Feature: {data.edge_feat[index]}</Popup>
                   </Polyline>
@@ -190,5 +152,3 @@ const BaseMap = () => {
     </div>
   );
 };
-
-export default BaseMap;

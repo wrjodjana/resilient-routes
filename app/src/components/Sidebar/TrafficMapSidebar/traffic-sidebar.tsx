@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { SidebarProps } from "./traffic-sidebar";
 
-export const TrafficSidebar = ({ reset, setMap, addNodeId, runRatioScenarios, runFlowScenarios, runCapacityScenarios }: SidebarProps) => {
+export const TrafficSidebar = ({ reset, setMap, addNodeId, runRatioScenarios, runFlowScenarios, runCapacityScenarios, setMapCenter, setMapZoom }: SidebarProps) => {
   const [error, setError] = useState<string>("");
   const [selectedMap, setSelectedMap] = useState<string>("sta_siouxfalls");
   const [nodeId, setNodeId] = useState<number | "">("");
@@ -17,6 +17,28 @@ export const TrafficSidebar = ({ reset, setMap, addNodeId, runRatioScenarios, ru
     const mapName = event.target.value;
     setSelectedMap(mapName);
     setMap(mapName);
+
+    switch (mapName) {
+      case "sta_siouxfalls":
+        console.log("Setting center to Sioux Falls");
+        setMapCenter([43.546, -96.7313]);
+        setMapZoom(12);
+        break;
+      case "sta_EMA":
+        console.log("Setting center to Eastern Massachusetts");
+        setMapCenter([42.3601, -71.0589]);
+        setMapZoom(10);
+        break;
+      case "sta_anaheim":
+        console.log("Setting center to Anaheim");
+        setMapCenter([33.8366, -117.9143]);
+        setMapZoom(11);
+        break;
+      default:
+        console.log("Setting default center");
+        setMapCenter([43.546, -96.7313]);
+        setMapZoom(12);
+    }
   };
 
   const handleAddNodeId = () => {

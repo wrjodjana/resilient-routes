@@ -5,4 +5,6 @@ export interface SidebarProps {
   runRatioScenarios: () => void;
   runFlowScenarios: () => void;
   runCapacityScenarios: () => void;
+  setMapCenter: (center: [number, number]) => void;
+  setMapZoom: (zoom: number) => void;
 }

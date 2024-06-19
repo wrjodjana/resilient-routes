@@ -5,6 +5,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "leaflet-arrowheads";
 import { MatrixData, TrafficData } from "./traffic-map";
+import MapOperations from "../../hooks/mapoperations.tsx";
 
 export const TrafficMap = () => {
   const [error, setError] = useState<string | null>(null);
@@ -15,6 +16,9 @@ export const TrafficMap = () => {
   const [ratioScenarios, setRatioScenarios] = useState<boolean>(false);
   const [flowScenarios, setFlowScenarios] = useState<boolean>(false);
   const [capacityScenarios, setCapacityScenarios] = useState<boolean>(false);
+
+  const [mapCenter, setMapCenter] = useState<[number, number]>([43.546, -96.7313]);
+  const [mapZoom, setMapZoom] = useState<number>(12);
 
   useEffect(() => {
     fetch(`http://localhost:5000/data/matrix/${selectedMap}`)
@@ -215,8 +219,9 @@ export const TrafficMap = () => {
   return (
     <div className="flex h-screen">
       <div className="w-5/6 h-full">
-        <MapContainer center={[43.546, -96.7313]} zoom={12} className="h-full">
+        <MapContainer center={mapCenter} zoom={mapZoom} style={{ height: "100%", width: "100%" }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <MapOperations center={mapCenter} zoom={mapZoom} />
           <Pane name="polylines" style={{ zIndex: 400 }} />
           <Pane name="nodes" style={{ zIndex: 500 }} />
 
@@ -421,7 +426,16 @@ export const TrafficMap = () => {
           )}
         </MapContainer>
       </div>
-      <TrafficSidebar reset={handleReset} setMap={setSelectedMap} addNodeId={handleAddNodeId} runRatioScenarios={runRatioScenarios} runFlowScenarios={runFlowScenarios} runCapacityScenarios={runCapacityScenarios} />
+      <TrafficSidebar
+        reset={handleReset}
+        setMap={setSelectedMap}
+        addNodeId={handleAddNodeId}
+        runRatioScenarios={runRatioScenarios}
+        runFlowScenarios={runFlowScenarios}
+        runCapacityScenarios={runCapacityScenarios}
+        setMapCenter={setMapCenter}
+        setMapZoom={setMapZoom}
+      />
     </div>
   );
 };

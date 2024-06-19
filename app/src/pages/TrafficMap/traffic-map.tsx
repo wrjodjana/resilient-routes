@@ -103,13 +103,13 @@ export const TrafficMap = () => {
   function parseKey(key: string): [number | null, number | null] {
     if (!key) {
       console.error("parseKey was called with an empty key.");
-      return [null, null]; // Return null or a default value that your logic can handle.
+      return [null, null];
     }
 
     const parts = key.split("-");
     if (parts.length !== 2) {
       console.error(`parseKey received a key in an unexpected format: ${key}`);
-      return [null, null]; // Return null or a default value that your logic can handle.
+      return [null, null];
     }
 
     const startId = parseInt(parts[0], 10);
@@ -117,7 +117,7 @@ export const TrafficMap = () => {
 
     if (isNaN(startId) || isNaN(endId)) {
       console.error(`parseKey received non-numeric IDs from key: ${key}`);
-      return [null, null]; // Return null or a default value that your logic can handle.
+      return [null, null];
     }
 
     return [startId, endId];

@@ -5,7 +5,6 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "leaflet-arrowheads";
 import { MatrixData, TrafficData } from "./traffic-map";
-import DemandLegend from "../../components/Legend/demand-legend.tsx";
 
 export const TrafficMap = () => {
   const [error, setError] = useState<string | null>(null);
@@ -124,15 +123,34 @@ export const TrafficMap = () => {
     return [startId, endId];
   }
 
-  function getColorRatioByValue(value: number) {
+  // ratio colors
+  function colorRatioSiouxFalls(value: number) {
     const hue = 240;
     const saturation = 100;
-    const normalizedValue = (value - 0.1) / (1.7 - 0.1);
+    const normalizedValue = (value - 0.12762650681519946) / (1.677709070292858 - 0.12762650681519946);
     const lightness = Math.round(100 - normalizedValue * 80);
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   }
 
-  function getColorFlowByValue(value: number) {
+  function colorRatioAnaheim(value: number) {
+    const hue = 240;
+    const saturation = 100;
+    const normalizedValue = (value - 0.0020611606997490923) / (1.8780740683167956 - 0.0020611606997490923);
+    const lightness = Math.round(100 - normalizedValue * 80);
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  }
+
+  function colorRatioEMA(value: number) {
+    const hue = 240;
+    const saturation = 100;
+    const normalizedValue = (value - 0.0) / (3.6088610537124026 - 0.0);
+    const lightness = Math.round(100 - normalizedValue * 80);
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  }
+
+  // flow colors
+
+  function colorFlowSiouxFalls(value: number) {
     const hue = 240;
     const saturation = 100;
     const minValue = 2336.99156973385;
@@ -142,11 +160,53 @@ export const TrafficMap = () => {
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   }
 
-  function getColorCapacityByValue(value: number) {
+  function colorFlowAnaheim(value: number) {
+    const hue = 240;
+    const saturation = 100;
+    const minValue = 49.47501460555722;
+    const maxValue = 9179.169793452049;
+    const normalizedValue = (value - minValue) / (maxValue - minValue);
+    const lightness = Math.round(100 - normalizedValue * 80);
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  }
+
+  function colorFlowEMA(value: number) {
+    const hue = 240;
+    const saturation = 100;
+    const minValue = 0.0;
+    const maxValue = 11983.482682010897;
+    const normalizedValue = (value - minValue) / (maxValue - minValue);
+    const lightness = Math.round(100 - normalizedValue * 80);
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  }
+
+  // capacity colors
+
+  function colorCapacitySiouxFalls(value: number) {
     const hue = 240;
     const saturation = 100;
     const minValue = 3482.2918353127734;
-    const maxValue = 45771.78635022687;
+    const maxValue = 46318.51293684211;
+    const normalizedValue = (value - minValue) / (maxValue - minValue);
+    const lightness = Math.round(100 - normalizedValue * 80);
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  }
+
+  function colorCapacityAnaheim(value: number) {
+    const hue = 240;
+    const saturation = 100;
+    const minValue = 659.4235006158718;
+    const maxValue = 9934.27017574994;
+    const normalizedValue = (value - minValue) / (maxValue - minValue);
+    const lightness = Math.round(100 - normalizedValue * 80);
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  }
+
+  function colorCapacityEMA(value: number) {
+    const hue = 240;
+    const saturation = 100;
+    const minValue = 199.60754318254547;
+    const maxValue = 7974.870302540027;
     const normalizedValue = (value - minValue) / (maxValue - minValue);
     const lightness = Math.round(100 - normalizedValue * 80);
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
@@ -250,7 +310,11 @@ export const TrafficMap = () => {
                   ] as [number, number][];
 
                   return (
-                    <Polyline key={key} positions={positions} color={getColorRatioByValue(ratio)}>
+                    <Polyline
+                      key={key}
+                      positions={positions}
+                      color={selectedMap === "sta_siouxfalls" ? colorRatioSiouxFalls(ratio) : selectedMap === "sta_anaheim" ? colorRatioAnaheim(ratio) : selectedMap === "sta_EMA" ? colorRatioEMA(ratio) : "blue"}
+                    >
                       <Popup>Ratio: {ratio.toFixed(2)}</Popup>
                     </Polyline>
                   );
@@ -295,7 +359,11 @@ export const TrafficMap = () => {
                   ] as [number, number][];
 
                   return (
-                    <Polyline key={key} positions={positions} color={getColorFlowByValue(flow)}>
+                    <Polyline
+                      key={key}
+                      positions={positions}
+                      color={selectedMap === "sta_siouxfalls" ? colorFlowSiouxFalls(flow) : selectedMap === "sta_anaheim" ? colorFlowAnaheim(flow) : selectedMap === "sta_EMA" ? colorFlowEMA(flow) : "blue"}
+                    >
                       <Popup>Flow: {flow.toFixed(2)}</Popup>
                     </Polyline>
                   );
@@ -340,14 +408,17 @@ export const TrafficMap = () => {
                   ] as [number, number][];
 
                   return (
-                    <Polyline key={key} positions={positions} color={getColorCapacityByValue(capacity)}>
+                    <Polyline
+                      key={key}
+                      positions={positions}
+                      color={selectedMap === "sta_siouxfalls" ? colorCapacitySiouxFalls(capacity) : selectedMap === "sta_anaheim" ? colorCapacityAnaheim(capacity) : selectedMap === "sta_EMA" ? colorCapacityEMA(capacity) : "blue"}
+                    >
                       <Popup>Capacity: {capacity.toFixed(2)}</Popup>
                     </Polyline>
                   );
                 })}
             </>
           )}
-          {selectedNodeId && <DemandLegend />}
         </MapContainer>
       </div>
       <TrafficSidebar reset={handleReset} setMap={setSelectedMap} addNodeId={handleAddNodeId} runRatioScenarios={runRatioScenarios} runFlowScenarios={runFlowScenarios} runCapacityScenarios={runCapacityScenarios} />

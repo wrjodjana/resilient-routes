@@ -6,6 +6,7 @@ import L from "leaflet";
 import "leaflet-arrowheads";
 import { MatrixData, TrafficData } from "./traffic-map";
 import MapOperations from "../../hooks/mapoperations.tsx";
+import DemandLegend from "../../components/Legend/demand-legend.tsx";
 
 export const TrafficMap = () => {
   const [error, setError] = useState<string | null>(null);
@@ -424,6 +425,7 @@ export const TrafficMap = () => {
                 })}
             </>
           )}
+          {selectedNodeId && <DemandLegend />}
         </MapContainer>
       </div>
       <TrafficSidebar

@@ -6,7 +6,20 @@ import L from "leaflet";
 import "leaflet-arrowheads";
 import { MatrixData, TrafficData } from "./traffic-map";
 import MapOperations from "../../hooks/mapoperations.tsx";
+
+// Legends
 import DemandLegend from "../../components/Legend/demand-legend.tsx";
+import SiouxFallsLegendRatio from "../../components/Legend/siouxfalls_legends/siouxfalls-legend-ratio";
+import SiouxFallsLegendFlow from "../../components/Legend/siouxfalls_legends/siouxfalls-legend-flow";
+import SiouxFallsLegendCapacity from "../../components/Legend/siouxfalls_legends/siouxfalls-legend-capacity";
+
+import AnaheimLegendRatio from "../../components/Legend/anaheim_legends/anaheim-legend-ratio";
+import AnaheimLegendFlow from "../../components/Legend/anaheim_legends/anaheim-legend-flow";
+import AnaheimLegendCapacity from "../../components/Legend/anaheim_legends/anaheim-legend-capacity";
+
+import EmaLegendRatio from "../../components/Legend/ema_legends/ema-legend-ratio";
+import EmaLegendFlow from "../../components/Legend/ema_legends/ema-legend-flow";
+import EmaLegendCapacity from "../../components/Legend/ema_legends/ema-legend-capacity";
 
 export const TrafficMap = () => {
   const [error, setError] = useState<string | null>(null);
@@ -133,7 +146,7 @@ export const TrafficMap = () => {
     const hue = 240;
     const saturation = 100;
     const normalizedValue = (value - 0.12762650681519946) / (1.677709070292858 - 0.12762650681519946);
-    const lightness = Math.round(100 - normalizedValue * 80);
+    const lightness = Math.round(90 - normalizedValue * 80);
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   }
 
@@ -141,7 +154,7 @@ export const TrafficMap = () => {
     const hue = 240;
     const saturation = 100;
     const normalizedValue = (value - 0.0020611606997490923) / (1.8780740683167956 - 0.0020611606997490923);
-    const lightness = Math.round(100 - normalizedValue * 80);
+    const lightness = Math.round(90 - normalizedValue * 80);
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   }
 
@@ -149,7 +162,7 @@ export const TrafficMap = () => {
     const hue = 240;
     const saturation = 100;
     const normalizedValue = (value - 0.0) / (3.6088610537124026 - 0.0);
-    const lightness = Math.round(100 - normalizedValue * 80);
+    const lightness = Math.round(90 - normalizedValue * 80);
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   }
 
@@ -161,7 +174,7 @@ export const TrafficMap = () => {
     const minValue = 2336.99156973385;
     const maxValue = 20778.95938822101;
     const normalizedValue = (value - minValue) / (maxValue - minValue);
-    const lightness = Math.round(100 - normalizedValue * 80);
+    const lightness = Math.round(90 - normalizedValue * 80);
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   }
 
@@ -171,7 +184,7 @@ export const TrafficMap = () => {
     const minValue = 49.47501460555722;
     const maxValue = 9179.169793452049;
     const normalizedValue = (value - minValue) / (maxValue - minValue);
-    const lightness = Math.round(100 - normalizedValue * 80);
+    const lightness = Math.round(90 - normalizedValue * 80);
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   }
 
@@ -181,7 +194,7 @@ export const TrafficMap = () => {
     const minValue = 0.0;
     const maxValue = 11983.482682010897;
     const normalizedValue = (value - minValue) / (maxValue - minValue);
-    const lightness = Math.round(100 - normalizedValue * 80);
+    const lightness = Math.round(90 - normalizedValue * 80);
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   }
 
@@ -193,7 +206,7 @@ export const TrafficMap = () => {
     const minValue = 3482.2918353127734;
     const maxValue = 46318.51293684211;
     const normalizedValue = (value - minValue) / (maxValue - minValue);
-    const lightness = Math.round(100 - normalizedValue * 80);
+    const lightness = Math.round(90 - normalizedValue * 80);
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   }
 
@@ -203,7 +216,7 @@ export const TrafficMap = () => {
     const minValue = 659.4235006158718;
     const maxValue = 9934.27017574994;
     const normalizedValue = (value - minValue) / (maxValue - minValue);
-    const lightness = Math.round(100 - normalizedValue * 80);
+    const lightness = Math.round(90 - normalizedValue * 80);
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   }
 
@@ -213,7 +226,7 @@ export const TrafficMap = () => {
     const minValue = 199.60754318254547;
     const maxValue = 7974.870302540027;
     const normalizedValue = (value - minValue) / (maxValue - minValue);
-    const lightness = Math.round(100 - normalizedValue * 80);
+    const lightness = Math.round(90 - normalizedValue * 80);
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   }
 
@@ -426,6 +439,15 @@ export const TrafficMap = () => {
             </>
           )}
           {selectedNodeId && <DemandLegend />}
+          {selectedMap === "sta_siouxfalls" && ratioScenarios && <SiouxFallsLegendRatio />}
+          {selectedMap === "sta_siouxfalls" && flowScenarios && <SiouxFallsLegendFlow />}
+          {selectedMap === "sta_siouxfalls" && capacityScenarios && <SiouxFallsLegendCapacity />}
+          {selectedMap === "sta_anaheim" && ratioScenarios && <AnaheimLegendRatio />}
+          {selectedMap === "sta_anaheim" && flowScenarios && <AnaheimLegendFlow />}
+          {selectedMap === "sta_anaheim" && capacityScenarios && <AnaheimLegendCapacity />}
+          {selectedMap === "sta_EMA" && ratioScenarios && <EmaLegendRatio />}
+          {selectedMap === "sta_EMA" && flowScenarios && <EmaLegendFlow />}
+          {selectedMap === "sta_EMA" && capacityScenarios && <EmaLegendCapacity />}
         </MapContainer>
       </div>
       <TrafficSidebar

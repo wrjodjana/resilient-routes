@@ -255,8 +255,43 @@ def get_traffic_data(dataset):
 # with this bridge probability/link probability i would run it on the neural network model
 # the model will return information about node values and then visualise it
 
+@app.route('/data/earthquake/<dataset>/<node_value>')
+def get_earthquake_data(dataset, node_value):
+    if dataset == "major":
+        data = f'./connectivity_gnn_small/data/data_{node_value}_v2/all_result.pickle'
+        with open(data, 'rb') as handle:
+            all_result = pickle.load(handle)
+        
+        avg_prob_list = []
+        for graph_idx in all_result.keys():
+            avg_prob_list.append(np.mean(all_result[graph_idx]['node_res']).item())
+        
+        sort_graph_idx = np.argsort(avg_prob_list)
+        major_earthquake_probs = [all_result[idx]['node_res'] for idx in sort_graph_idx[:1]]
+    elif dataset == "moderate":
+        data = f'./connectivity_gnn_small/data/data_{node_value}_v2/all_result.pickle'
+        with open(data, 'rb') as handle:
+            all_result = pickle.load(handle)
+        
+        avg_prob_list = []
+        for graph_idx in all_result.keys():
+            avg_prob_list.append(np.mean(all_result[graph_idx]['node_res']).item())
+        
+        sort_graph_idx = np.argsort(avg_prob_list)
+        moderate_earthquake_probs = [all_result[idx]['node_res'] for idx in sort_graph_idx[len(sort_graph_idx)//2:len(sort_graph_idx)//2+1]]
+    elif dataset == "minor":
+        data = f'./connectivity_gnn_small/data/data_{node_value}_v2/all_result.pickle'
+        with open(data, 'rb') as handle:
+            all_result = pickle.load(handle)
+        
+        avg_prob_list = []
+        for graph_idx in all_result.keys():
+            avg_prob_list.append(np.mean(all_result[graph_idx]['node_res']).item())
+        
+        sort_graph_idx = np.argsort(avg_prob_list)
+        minor_earthquake_probs = [all_result[idx]['node_res'] for idx in sort_graph_idx[-1:]]
 
-
+        
 
 
 if __name__ == '__main__':

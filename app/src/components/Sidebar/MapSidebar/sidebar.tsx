@@ -98,9 +98,9 @@ export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridge
           </div>
           <label className="block mb-2 font-bold font-figtree">Select Scenario</label>
           <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={selectedMap} onChange={handleMapChange}>
-            <option value="">Major Earthquake</option>
-            <option value="">Moderate Earthquake</option>
-            <option value="">Minor Earthquake</option>
+            <option value="major">Major Earthquake</option>
+            <option value="moderate">Moderate Earthquake</option>
+            <option value="minor">Minor Earthquake</option>
           </select>
           <button className="mt-4 px-4 py-2 bg-green-500 text-white rounded font-figtree w-full">Run Scenarios</button>
         </div>

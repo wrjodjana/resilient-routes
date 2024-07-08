@@ -262,12 +262,12 @@ for target_node_id in test_targets:
 
 result_summary = np.vstack(result_summary)
 # (model_name, batch_size, dataset_name), (percentage thre)
-np.savetxt("./result_dev/{}_{}_{}_{}_result.csv".format(model_idx, batch_size, \
+np.savetxt("{}_{}_{}_{}_result.csv".format(model_idx, batch_size, \
     dataset_name, percentage), result_summary, delimiter=',', \
     header="target_node_id, graph_id, f1_macro_reg, f1_micro_reg, mae, mse, rmse, running_time")
 
 reg_pred_summary = np.vstack(reg_pred_summary)
 # (model_name, batch_size, dataset_name), (percentage thre)
-np.savetxt("./result_dev/reg_{}_{}_{}_{}_result.csv".format(model_idx, batch_size, \
+np.savetxt("reg_{}_{}_{}_{}_result.csv".format(model_idx, batch_size, \
     dataset_name, percentage), reg_pred_summary, delimiter=',', \
     header="prediction, ground_truth")

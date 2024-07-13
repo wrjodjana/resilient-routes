@@ -30,7 +30,7 @@ torch.set_printoptions(linewidth=400, precision=3)
 np.set_printoptions(linewidth=400, precision=3)
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-print("using device: {}".format(device))
+# print("using device: {}".format(device))
 
 def collate(samples):
     n = len(samples)
@@ -43,11 +43,11 @@ class BridgeDataset(DGLDataset):
     def __init__(self, start_id, end_id, data_dir):
         self.start_id = start_id
         self.end_id = end_id
-        self.data_dir = data_dir
+        self.data_dir = os.path.join('connectivity_gnn_small', 'data', data_dir) 
         if type(start_id) == list:
-            super(BridgeDataset, self).__init__(name='bridge', hash_key={start_id[0], data_dir[0]})
+            super(BridgeDataset, self).__init__(name='bridge', hash_key={start_id[0], self.data_dir})
         else:
-            super(BridgeDataset, self).__init__(name='bridge', hash_key={start_id, data_dir})
+            super(BridgeDataset, self).__init__(name='bridge', hash_key={start_id, self.data_dir})
 
     def process(self):
         self.graphs = []
@@ -55,39 +55,38 @@ class BridgeDataset(DGLDataset):
         end_id_list = self.end_id if type(self.end_id) == list else [self.end_id]
         data_dir_list = self.data_dir if type(self.start_id) == list else [self.data_dir]
         
-        for start_id, end_id, dir in zip(start_id_list, end_id_list, data_dir_list):
-            print('loading {}'.format(dir))
-            with open(dir+'/graph_info.pickle', 'rb') as handle:
-                graph_info = pickle.load(handle)
+        
+        # print('loading {}'.format(dir))
+        with open(self.data_dir+'/graph_info.pickle', 'rb') as handle:
+            graph_info = pickle.load(handle)
 
-            # Create a graph for each graph ID from the edges table.
-            # First process the properties table into two dictionaries with graph IDs as keys.
-            # The label and number of nodes are values.
-            graph_id_range = [i for i in range(start_id, end_id)]
+        # Create a graph for each graph ID from the edges table.
+        # First process the properties table into two dictionaries with graph IDs as keys.
+        # The label and number of nodes are values.
+        
+        with open(self.data_dir+'/all_result.pickle', 'rb') as handle:
+            graph_data_all = pickle.load(handle)
             
-            with open(dir+'/all_result.pickle', 'rb') as handle:
-                graph_data_all = pickle.load(handle)
-                
-            for graph_id in graph_id_range:
-                # load each graph
-                graph_data = graph_data_all[graph_id]
-                
-                # data is directed, make it undirected
-                node_1 = torch.tensor(graph_data['edge_order'][:,0].squeeze(), dtype=torch.int32)
-                node_2 = torch.tensor(graph_data['edge_order'][:,1].squeeze(), dtype=torch.int32)
-                edge_feat_half = torch.tensor(graph_data['edge_feat'], dtype=torch.float32)
-                edge_feat = torch.cat((edge_feat_half, edge_feat_half), axis = 0)
-                src = torch.cat((node_1, node_2))
-                dst = torch.cat((node_2, node_1))
-                
-                # create undirected graph
-                g = dgl.graph((src, dst), num_nodes=graph_info['n_node'])
-                g.ndata['feat'] = torch.tensor(graph_data['node_feat'], dtype=torch.float32)
-                g.ndata['label'] = torch.tensor(graph_data['node_res'], dtype=torch.float32)
-                g.ndata['class'] = torch.tensor(graph_data['node_class'], dtype=torch.long)
-                g.edata['feat'] = edge_feat
+        
+        # load each graph
+        graph_data = graph_data_all[72]
+        
+        # data is directed, make it undirected
+        node_1 = torch.tensor(graph_data['edge_order'][:,0].squeeze(), dtype=torch.int32)
+        node_2 = torch.tensor(graph_data['edge_order'][:,1].squeeze(), dtype=torch.int32)
+        edge_feat_half = torch.tensor(graph_data['edge_feat'], dtype=torch.float32)
+        edge_feat = torch.cat((edge_feat_half, edge_feat_half), axis = 0)
+        src = torch.cat((node_1, node_2))
+        dst = torch.cat((node_2, node_1))
+        
+        # create undirected graph
+        g = dgl.graph((src, dst), num_nodes=graph_info['n_node'])
+        g.ndata['feat'] = torch.tensor(graph_data['node_feat'], dtype=torch.float32)
+        g.ndata['label'] = torch.tensor(graph_data['node_res'], dtype=torch.float32)
+        g.ndata['class'] = torch.tensor(graph_data['node_class'], dtype=torch.long)
+        g.edata['feat'] = edge_feat
 
-                self.graphs.append(g.to(device))
+        self.graphs.append(g.to(device))
 
     def __getitem__(self, i):
         return self.graphs[i]
@@ -101,7 +100,7 @@ def test_multitask_record(dataset, target_node_id, model, start_id, stop_id, val
     # reg_loss_func = F.l1_loss if loss_type == 1 else F.mse_loss
     # cla_loss_fun = F.cross_entropy
 
-    graph_list = [dataset[g_id].to(device) for g_id in range(stop_id-start_id)]
+    graph_list = [dataset[0].to(device)]
     test_idx = np.arange(stop_id-start_id)
     class_weight = torch.FloatTensor(class_weight).to(device)
 
@@ -117,53 +116,52 @@ def test_multitask_record(dataset, target_node_id, model, start_id, stop_id, val
     model.eval()
     ### for each target node, compute the macro/micro F1 score, L1/L2 loss on all graphs, return a matrix 200 * 5
     with torch.no_grad():
-        for graph_id in test_idx:
-            start_time = time.time()
-            g = graph_list[graph_id]
-            node_feat = g.ndata['feat']
-            edge_feat = g.edata['feat']
-            reg_label = g.ndata['label']
-            cla_label = g.ndata['class']
+        start_time = time.time()
+        g = graph_list[0]
+        node_feat = g.ndata['feat']
+        edge_feat = g.edata['feat']
+        reg_label = g.ndata['label']
+        cla_label = g.ndata['class']
+        ### Forward
+        reg_logits = model(g, node_feat, edge_feat)
 
-            ### Forward
-            reg_logits = model(g, node_feat, edge_feat)
+        # ### Compute accuracy on training/validation/test
+        # loss1 = reg_loss_func(reg_logits, reg_label)
+        # loss2 = cla_loss_fun(cla_logits, cla_label.squeeze(), weight=class_weight)
+        # # err_test.append((loss1+loss2).cpu().detach().numpy().item())
+        # error = torch.abs(reg_logits - reg_label)
+        # # print("max: {}, average: {}".format(torch.max(error), torch.mean(error)))
+        
+        # ### record all type of error
+        # mae = F.l1_loss(reg_logits, reg_label).cpu().detach().numpy().squeeze()
+        # mse = F.mse_loss(reg_logits, reg_label).cpu().detach().numpy().squeeze()
+        # rmse = np.sqrt(mse)
 
-            # ### Compute accuracy on training/validation/test
-            # loss1 = reg_loss_func(reg_logits, reg_label)
-            # loss2 = cla_loss_fun(cla_logits, cla_label.squeeze(), weight=class_weight)
-            # err_test.append((loss1+loss2).cpu().detach().numpy().item())
-            error = torch.abs(reg_logits - reg_label)
-            # print("max: {}, average: {}".format(torch.max(error), torch.mean(error)))
-            
-            ### record all type of error
-            mae = F.l1_loss(reg_logits, reg_label).cpu().detach().numpy().squeeze()
-            mse = F.mse_loss(reg_logits, reg_label).cpu().detach().numpy().squeeze()
-            rmse = np.sqrt(mse)
+        # ### classification based on regression result
+        # class_true = cla_label.cpu().detach().numpy().squeeze()
+        # class_pred_reg = reg_logits.cpu().detach().numpy().squeeze()
+        # # class_pred_cla = cla_logits.cpu().detach().numpy()
+        # # class_true = np.digitize(class_true, class_thre, False)
+        # class_pred_reg = np.digitize(class_pred_reg, class_thre, False)
+        # class_pred_cla = class_pred_cla.argmax(1)
+        # for t, p in zip(class_true, class_pred_reg):
+        #     confusion_matrix_reg[t, p] += 1
+        # for t, p in zip(class_true, class_pred_cla):
+        #     confusion_matrix_cla[t, p] += 1
 
-            ### classification based on regression result
-            class_true = cla_label.cpu().detach().numpy().squeeze()
-            class_pred_reg = reg_logits.cpu().detach().numpy().squeeze()
-            # class_pred_cla = cla_logits.cpu().detach().numpy()
-            # class_true = np.digitize(class_true, class_thre, False)
-            class_pred_reg = np.digitize(class_pred_reg, class_thre, False)
-            # class_pred_cla = class_pred_cla.argmax(1)
-            # for t, p in zip(class_true, class_pred_reg):
-            #     confusion_matrix_reg[t, p] += 1
-            # for t, p in zip(class_true, class_pred_cla):
-            #     confusion_matrix_cla[t, p] += 1
-
-            ### record the y_true and y_pred
-            f1_macro_reg = f1_score(class_true, class_pred_reg, average='macro')
-            f1_micro_reg = f1_score(class_true, class_pred_reg, average='micro')
-            # f1_macro_cla = f1_score(class_true, class_pred_cla, average='macro')
-            # f1_micro_cla = f1_score(class_true, class_pred_cla, average='micro')
-            running_time = time.time() - start_time
-            single_summary.append(np.array([target_node_id, graph_id, f1_macro_reg, f1_micro_reg, \
-                mae, mse, rmse, running_time]))
-            
-            reg_logits_np = reg_logits.cpu().detach().numpy().reshape(-1, 1)
-            reg_label_np = reg_label.cpu().detach().numpy().reshape(-1, 1)
-            single_reg_result.append(np.hstack((reg_logits_np, reg_label_np)))
+        ### record the y_true and y_pred
+        # f1_macro_reg = f1_score(class_true, class_pred_reg, average='macro')
+        # f1_micro_reg = f1_score(class_true, class_pred_reg, average='micro')
+        # f1_macro_cla = f1_score(class_true, class_pred_cla, average='macro')
+        # f1_micro_cla = f1_score(class_true, class_pred_cla, average='micro')
+        # running_time = time.time() - start_time
+        # single_summary.append(np.array([target_node_id, graph_id, f1_macro_reg, f1_micro_reg, \
+        #     mae, mse, rmse, running_time]))
+        
+        reg_logits_np = reg_logits.cpu().detach().numpy().reshape(-1, 1)
+        print(reg_logits_np.tolist())
+        reg_label_np = reg_label.cpu().detach().numpy().reshape(-1, 1)
+        single_reg_result.append(np.hstack((reg_logits_np, reg_label_np)))
 
             #create_plot_regression(reg_logits.cpu().detach().numpy(), val_data_dir, val_img_dir, graph_id)
         # print('err_test: {:.3f}'.format(sum(err_test)/(num_sample)))
@@ -172,7 +170,7 @@ def test_multitask_record(dataset, target_node_id, model, start_id, stop_id, val
         # print("confusion_matrix_cla\n", confusion_matrix_cla)
         # print("per class accuracy from cla: ", np.diag(confusion_matrix_cla)/np.sum(confusion_matrix_cla, 1))
         
-    return np.vstack(single_summary), np.vstack(single_reg_result)
+    return reg_logits_np.tolist()
 
 ### parameter need to control:
 ### model_name, batch_size, dataset_name, percentage
@@ -198,14 +196,14 @@ n_feat = args.n_feat
 bridge_list, road_list, n_node, n_bridge, n_road = load_edge_list()
 ### randomly select train target node
 
-train_targets = generate_sample(bridge_list, road_list, n_node, n_bridge, n_road, percentage)
-print("train target list: {}".format(train_targets))
-print("total number of node: {}".format(n_node))
-### select rest of 50% of node as test target node
-#test_targets = np.random.choice(np.delete(np.arange(n_node), train_targets), int(0.5*n_node), replace=False)
-test_targets = reserve_sample(bridge_list, road_list, n_node) #[14] #reserve_sample(bridge_list, road_list, n_node)
-print("test target list: {}".format(test_targets))
-all_targets = test_targets
+# train_targets = generate_sample(bridge_list, road_list, n_node, n_bridge, n_road, percentage)
+# print("train target list: {}".format(train_targets))
+# print("total number of node: {}".format(n_node))
+# ### select rest of 50% of node as test target node
+# #test_targets = np.random.choice(np.delete(np.arange(n_node), train_targets), int(0.5*n_node), replace=False)
+# test_targets = reserve_sample(bridge_list, road_list, n_node) #[14] #reserve_sample(bridge_list, road_list, n_node)
+# print("test target list: {}".format(test_targets))
+# all_targets = test_targets
 
 class_weight = [7.0, 1.0]       # class weight for classification
 class_thre = [0.75]              # threhold for difference class
@@ -235,39 +233,49 @@ if model_idx == 10:
     model = ModelFCNN(n_feat, 512, reg_num).to(device)
     
 model_name = model.__class__.__name__
-checkpoint = torch.load('./saved_model_dev/{}_{}_{}_{}.pth'.format(model_idx, batch_size, dataset_name, percentage), map_location=device)
+checkpoint = torch.load('./connectivity_gnn_small/saved_model_dev/{}_{}_{}_{}.pth'.format(model_idx, batch_size, dataset_name, percentage), map_location=device)
 model.load_state_dict(checkpoint['model_state_dict'])
 
 result_summary = []
 reg_pred_summary = []
+
+val_dir = 'data_{}_v2'.format(0)    # path to load different data
+img_dir = 'img_reg_{}_v2'.format(0)  # path to save the prediction
+start_id, stop_id = train_sample_size, total_sample_size
+val_dataset = BridgeDataset(train_sample_size, total_sample_size, val_dir)
+
+reg_logits_np = test_multitask_record(val_dataset, 0, model, start_id, stop_id, val_dir, img_dir, \
+    class_thre=class_thre, class_weight=class_weight, n_class=len(class_thre)+1)
+
+
 ### test on each test node
-for target_node_id in test_targets:
-    if target_node_id in train_targets:
-        val_dir = './{}/data_{}_v2'.format(dataset_name, target_node_id)    # path to load different data
-        img_dir = './{}/img_reg_{}_v2'.format(imageset_name, target_node_id)  # path to save the prediction
-        start_id, stop_id = train_sample_size, total_sample_size
-        val_dataset = BridgeDataset(train_sample_size, total_sample_size, val_dir)
-    else:
-        val_dir = './{}/data_{}_v2'.format(dataset_name, target_node_id)    # path to load different data
-        img_dir = './{}/img_reg_{}_v2'.format(imageset_name, target_node_id)  # path to save the prediction
-        start_id, stop_id = 0, total_sample_size
-        val_dataset = BridgeDataset(0, total_sample_size, val_dir)
+# for target_node_id in test_targets:
+#     if target_node_id in train_targets:
+#         val_dir = './{}/data_{}_v2'.format(dataset_name, target_node_id)    # path to load different data
+#         img_dir = './{}/img_reg_{}_v2'.format(imageset_name, target_node_id)  # path to save the prediction
+#         start_id, stop_id = train_sample_size, total_sample_size
+#         val_dataset = BridgeDataset(train_sample_size, total_sample_size, val_dir)
+#     else:
+#         val_dir = './{}/data_{}_v2'.format(dataset_name, target_node_id)    # path to load different data
+#         img_dir = './{}/img_reg_{}_v2'.format(imageset_name, target_node_id)  # path to save the prediction
+#         start_id, stop_id = 0, total_sample_size
+#         val_dataset = BridgeDataset(0, total_sample_size, val_dir)
 
-    single_summary, single_reg_pred = test_multitask_record(val_dataset, target_node_id, model, start_id, stop_id, val_dir, img_dir, \
-        class_thre=class_thre, class_weight=class_weight, n_class=len(class_thre)+1)
+#     single_summary, single_reg_pred = test_multitask_record(val_dataset, target_node_id, model, start_id, stop_id, val_dir, img_dir, \
+#         class_thre=class_thre, class_weight=class_weight, n_class=len(class_thre)+1)
     
-    result_summary.append(single_summary)
-    reg_pred_summary.append(single_reg_pred)
+#     result_summary.append(single_summary)
+#     reg_pred_summary.append(single_reg_pred)
 
 
-result_summary = np.vstack(result_summary)
-# (model_name, batch_size, dataset_name), (percentage thre)
-np.savetxt("{}_{}_{}_{}_result.csv".format(model_idx, batch_size, \
-    dataset_name, percentage), result_summary, delimiter=',', \
-    header="target_node_id, graph_id, f1_macro_reg, f1_micro_reg, mae, mse, rmse, running_time")
+# result_summary = np.vstack(result_summary)
+# # (model_name, batch_size, dataset_name), (percentage thre)
+# np.savetxt("{}_{}_{}_{}_result.csv".format(model_idx, batch_size, \
+#     dataset_name, percentage), result_summary, delimiter=',', \
+#     header="target_node_id, graph_id, f1_macro_reg, f1_micro_reg, mae, mse, rmse, running_time")
 
-reg_pred_summary = np.vstack(reg_pred_summary)
-# (model_name, batch_size, dataset_name), (percentage thre)
-np.savetxt("reg_{}_{}_{}_{}_result.csv".format(model_idx, batch_size, \
-    dataset_name, percentage), reg_pred_summary, delimiter=',', \
-    header="prediction, ground_truth")
+# reg_pred_summary = np.vstack(reg_pred_summary)
+# # (model_name, batch_size, dataset_name), (percentage thre)
+# np.savetxt("reg_{}_{}_{}_{}_result.csv".format(model_idx, batch_size, \
+#     dataset_name, percentage), reg_pred_summary, delimiter=',', \
+#     header="prediction, ground_truth")

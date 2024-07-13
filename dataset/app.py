@@ -6,6 +6,7 @@ from flask_cors import CORS
 import csv
 from collections import *
 import heapq
+import subprocess
 app = Flask(__name__)
 
 CORS(app)
@@ -209,43 +210,22 @@ def get_traffic_data(dataset):
 # the model will return information about node values and then visualise it
 
 
-
-@app.route('/data/earthquake/<dataset>/<node_value>')
-def get_earthquake_data(dataset, node_value):
-    if dataset == "major":
-        data = f'./connectivity_gnn_small/data/data_{node_value}_v2/all_result.pickle'
-        with open(data, 'rb') as handle:
-            all_result = pickle.load(handle)
-
-        avg_prob_list = []
-        for graph_idx in all_result.keys():
-            avg_prob_list.append(np.mean(all_result[graph_idx]['node_res']).item())
-
-        sort_graph_idx = np.argsort(avg_prob_list)
-        major_earthquake_probs = [all_result[idx]['node_res'] for idx in sort_graph_idx[:1]]
-    elif dataset == "moderate":
-        data = f'./connectivity_gnn_small/data/data_{node_value}_v2/all_result.pickle'
-        with open(data, 'rb') as handle:
-            all_result = pickle.load(handle)
-
-        avg_prob_list = []
-        for graph_idx in all_result.keys():
-            avg_prob_list.append(np.mean(all_result[graph_idx]['node_res']).item())
-
-        sort_graph_idx = np.argsort(avg_prob_list)
-        moderate_earthquake_probs = [all_result[idx]['node_res'] for idx in sort_graph_idx[len(sort_graph_idx)//2:len(sort_graph_idx)//2+1]]
-    elif dataset == "minor":
-        data = f'./connectivity_gnn_small/data/data_{node_value}_v2/all_result.pickle'
-        with open(data, 'rb') as handle:
-            all_result = pickle.load(handle)
-
-        avg_prob_list = []
-        for graph_idx in all_result.keys():
-            avg_prob_list.append(np.mean(all_result[graph_idx]['node_res']).item())
-
-        sort_graph_idx = np.argsort(avg_prob_list)
-        minor_earthquake_probs = [all_result[idx]['node_res'] for idx in sort_graph_idx[-1:]]
-
+@app.route('/data/earthquake/')
+def get_earthquake_data():
+    result = subprocess.run([
+        'python', 'connectivity_gnn_small/multitask_batch_test_only_reg_dev.py', 
+        '--model_idx=7', '--dataset_name=data', '--imageset_name=img','--n_feat=4','--percentage=0.8','--batch_size=512'
+    ], capture_output=True, text=True)
+    
+    # Parse the output string into a list of lists
+    output_str = result.stdout.strip()
+    output_list = json.loads(output_str.replace("'", '"'))
+    
+    # Create a compact JSON string
+    compact_json = json.dumps(output_list, separators=(',', ':'))
+    
+    # Return the compact JSON string as a response
+    return compact_json, 200, {'Content-Type': 'application/json'}
 
 
 

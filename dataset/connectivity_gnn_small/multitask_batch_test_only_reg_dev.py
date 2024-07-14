@@ -43,7 +43,7 @@ class BridgeDataset(DGLDataset):
     def __init__(self, start_id, end_id, data_dir):
         self.start_id = start_id
         self.end_id = end_id
-        self.data_dir = os.path.join('connectivity_gnn_small', 'data', data_dir) 
+        self.data_dir = os.path.join("connectivity_gnn_small","data", data_dir) 
         if type(start_id) == list:
             super(BridgeDataset, self).__init__(name='bridge', hash_key={start_id[0], self.data_dir})
         else:
@@ -64,12 +64,11 @@ class BridgeDataset(DGLDataset):
         # First process the properties table into two dictionaries with graph IDs as keys.
         # The label and number of nodes are values.
         
-        with open(self.data_dir+'/all_result.pickle', 'rb') as handle:
+        with open(self.data_dir+'/all_result_lite.pickle', 'rb') as handle:
             graph_data_all = pickle.load(handle)
-            
         
         # load each graph
-        graph_data = graph_data_all[72]
+        graph_data = graph_data_all[earthquake_type]
         
         # data is directed, make it undirected
         node_1 = torch.tensor(graph_data['edge_order'][:,0].squeeze(), dtype=torch.int32)
@@ -179,18 +178,22 @@ parser.add_argument("--model_idx", help="0, 1, 2", type=int)
 parser.add_argument("--batch_size", help="batch size", type=int)
 parser.add_argument("--dataset_name", help="batch size", type=str)
 parser.add_argument("--imageset_name", help="imageset name", type=str)
+parser.add_argument("--earthquake_type", help="major, moderate, minor", type=str)
 parser.add_argument("--percentage", help="percentage of node for training", type=float)
 parser.add_argument('--train_sample_size', help="sample size of each train target point", nargs='?', type=int, default=200)
 parser.add_argument('--total_sample_size', help="total sample size of each target point", nargs='?', type=int, default=300)
+parser.add_argument('--target_node_id', help="target node id", nargs='?', type=int, default=0)
 parser.add_argument('--n_feat', help="number of feature", nargs='?', type=int, default=6)
 args = parser.parse_args()
 model_idx = args.model_idx
 batch_size = args.batch_size
 dataset_name = args.dataset_name
 imageset_name = args.imageset_name
+earthquake_type = args.earthquake_type
 percentage = args.percentage
 train_sample_size = args.train_sample_size
 total_sample_size = args.total_sample_size
+target_node_id = args.target_node_id
 n_feat = args.n_feat
 
 bridge_list, road_list, n_node, n_bridge, n_road = load_edge_list()
@@ -239,8 +242,8 @@ model.load_state_dict(checkpoint['model_state_dict'])
 result_summary = []
 reg_pred_summary = []
 
-val_dir = 'data_{}_v2'.format(0)    # path to load different data
-img_dir = 'img_reg_{}_v2'.format(0)  # path to save the prediction
+val_dir = 'data_{}_v2'.format(target_node_id)    # path to load different data
+img_dir = 'img_reg_{}_v2'.format(target_node_id)  # path to save the prediction
 start_id, stop_id = train_sample_size, total_sample_size
 val_dataset = BridgeDataset(train_sample_size, total_sample_size, val_dir)
 

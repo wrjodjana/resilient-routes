@@ -210,21 +210,17 @@ def get_traffic_data(dataset):
 # the model will return information about node values and then visualise it
 
 
-@app.route('/data/earthquake/')
-def get_earthquake_data():
+@app.route('/data/earthquake/<earthquake_type>/<target_node_id>')
+def get_earthquake_data(earthquake_type, target_node_id):
     result = subprocess.run([
         'python', 'connectivity_gnn_small/multitask_batch_test_only_reg_dev.py', 
-        '--model_idx=7', '--dataset_name=data', '--imageset_name=img','--n_feat=4','--percentage=0.8','--batch_size=512'
+        '--model_idx=7', '--dataset_name=data', '--imageset_name=img','--n_feat=4','--percentage=0.8','--batch_size=512', '--earthquake_type='+earthquake_type, '--target_node_id='+target_node_id
     ], capture_output=True, text=True)
     
-    # Parse the output string into a list of lists
     output_str = result.stdout.strip()
     output_list = json.loads(output_str.replace("'", '"'))
-    
-    # Create a compact JSON string
     compact_json = json.dumps(output_list, separators=(',', ':'))
     
-    # Return the compact JSON string as a response
     return compact_json, 200, {'Content-Type': 'application/json'}
 
 

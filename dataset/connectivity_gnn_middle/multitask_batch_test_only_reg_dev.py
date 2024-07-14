@@ -242,8 +242,8 @@ model.load_state_dict(checkpoint['model_state_dict'])
 result_summary = []
 reg_pred_summary = []
 
-val_dir = 'data_{}_v2'.format(target_node_id)    # path to load different data
-img_dir = 'img_reg_{}_v2'.format(target_node_id)  # path to save the prediction
+val_dir = 'data_{}_v3'.format(target_node_id)    # path to load different data
+img_dir = 'img_reg_{}_v3'.format(target_node_id)  # path to save the prediction
 start_id, stop_id = train_sample_size, total_sample_size
 val_dataset = BridgeDataset(train_sample_size, total_sample_size, val_dir)
 

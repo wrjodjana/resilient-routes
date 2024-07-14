@@ -210,10 +210,10 @@ def get_traffic_data(dataset):
 # the model will return information about node values and then visualise it
 
 
-@app.route('/data/earthquake/<earthquake_type>/<target_node_id>')
-def get_earthquake_data(earthquake_type, target_node_id):
+@app.route('/data/earthquake/<earthquake_type>/<target_node_id>/<dataset>')
+def get_earthquake_data(earthquake_type, target_node_id, dataset):
     result = subprocess.run([
-        'python', 'connectivity_gnn_small/multitask_batch_test_only_reg_dev.py', 
+        'python', f'connectivity_gnn_{dataset}/multitask_batch_test_only_reg_dev.py', 
         '--model_idx=7', '--dataset_name=data', '--imageset_name=img','--n_feat=4','--percentage=0.8','--batch_size=512', '--earthquake_type='+earthquake_type, '--target_node_id='+target_node_id
     ], capture_output=True, text=True)
     

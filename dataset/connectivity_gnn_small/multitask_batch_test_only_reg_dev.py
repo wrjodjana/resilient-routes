@@ -43,7 +43,7 @@ class BridgeDataset(DGLDataset):
     def __init__(self, start_id, end_id, data_dir):
         self.start_id = start_id
         self.end_id = end_id
-        self.data_dir = os.path.join("connectivity_gnn_small","data", data_dir) 
+        self.data_dir = os.path.join("connectivity_gnn_small", "data", data_dir) 
         if type(start_id) == list:
             super(BridgeDataset, self).__init__(name='bridge', hash_key={start_id[0], self.data_dir})
         else:
@@ -85,6 +85,8 @@ class BridgeDataset(DGLDataset):
         g.ndata['class'] = torch.tensor(graph_data['node_class'], dtype=torch.long)
         g.edata['feat'] = edge_feat
 
+        print(g.edges(form='uv'))
+
         self.graphs.append(g.to(device))
 
     def __getitem__(self, i):
@@ -121,6 +123,7 @@ def test_multitask_record(dataset, target_node_id, model, start_id, stop_id, val
         edge_feat = g.edata['feat']
         reg_label = g.ndata['label']
         cla_label = g.ndata['class']
+        print(edge_feat.numpy())
         ### Forward
         reg_logits = model(g, node_feat, edge_feat)
 

@@ -5,16 +5,21 @@ import "leaflet/dist/leaflet.css";
 import AllLegend from "../../components/Legend/all-legend.tsx";
 import BridgeLegend from "../../components/Legend/bridge-legend.tsx";
 import SelectLegend from "../../components/Legend/select-legend.tsx";
-import { MapNode, Data, NodeData, BridgeInfo, BridgeData } from "./map";
+import { MapNode, Data, NodeData, BridgeInfo, BridgeData, EarthquakeData } from "./map";
 
 export const BaseMap = () => {
   const [selectedNodeData, setSelectedNodeData] = useState<NodeData | null>(null);
   const [data, setData] = useState<Data | null>(null);
   const [bridgeData, setBridgeData] = useState<BridgeData | null>(null);
+  const [earthquakeData, setEarthquakeData] = useState<EarthquakeData | null>(null);
   const [runAllScenarios, setRunAllScenarios] = useState<boolean>(false);
   const [runBridgeScenario, setRunBridgeScenario] = useState<boolean>(false);
+  const [runEarthquakeScenario, setRunEarthquakeScenario] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedMap, setSelectedMap] = useState<string>("connectivity_graph_small");
+  const [selectedGNNMap, setSelectedGNNMap] = useState<string>("connectivity_gnn_small");
+  const [selectedEarthquakeType, setSelectedEarthquakeType] = useState<string>("major");
+  const [selectedTargetNode, setSelectedTargetNode] = useState<number>(0);
 
   useEffect(() => {
     fetch(`http://localhost:5000/data/${selectedMap}`)
@@ -40,6 +45,19 @@ export const BaseMap = () => {
       });
   }, [selectedMap]);
 
+  useEffect(() => {
+    fetch(`http://localhost:5000/data/earthquake/${selectedEarthquakeType}/${selectedTargetNode}/${selectedGNNMap}`)
+      .then((response) => response.json())
+      .then((data: EarthquakeData) => {
+        setEarthquakeData(data);
+      })
+
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+        setError("Failed to load data. Please try again later.");
+      });
+  }, [selectedGNNMap, selectedEarthquakeType, selectedTargetNode]);
+
   const handleRunAllScenarios = () => {
     setRunAllScenarios(true);
   };
@@ -48,10 +66,18 @@ export const BaseMap = () => {
     setRunBridgeScenario(true);
   };
 
+  const handleRunEarthquakeScenario = () => {
+    setRunEarthquakeScenario(true);
+  };
+
   const handleReset = () => {
     setSelectedNodeData(null);
+    setData(null);
+    setBridgeData(null);
+    setEarthquakeData(null);
     setRunAllScenarios(false);
     setRunBridgeScenario(false);
+    setRunEarthquakeScenario(false);
     setError("");
   };
 
@@ -143,11 +169,41 @@ export const BaseMap = () => {
               ))}
             </>
           )}
+          {earthquakeData && runEarthquakeScenario && (
+            <>
+              {earthquakeData.map_nodes.ids.map((id: number, index: number) => (
+                <CircleMarker
+                  key={id}
+                  center={[earthquakeData.map_nodes.lats[index], earthquakeData.map_nodes.lons[index]]}
+                  color={id === selectedTargetNode ? "red" : getColorByValue(earthquakeData.probabilities[index][0])}
+                  radius={5}
+                  fillOpacity={1}
+                >
+                  <Popup>
+                    Node ID: {id}
+                    <br />
+                    Probability: {earthquakeData.probabilities[index][0].toFixed(2)}
+                  </Popup>
+                </CircleMarker>
+              ))}
+            </>
+          )}
+
           {runAllScenarios && <AllLegend />}
           {runBridgeScenario && <BridgeLegend />}
         </MapContainer>
       </div>
-      <Sidebar setSelectedNodeData={setSelectedNodeData} runAllScenarios={handleRunAllScenarios} reset={handleReset} runBridgeScenario={handleRunBridgeScenario} setMap={setSelectedMap} />
+      <Sidebar
+        setSelectedNodeData={setSelectedNodeData}
+        runAllScenarios={handleRunAllScenarios}
+        reset={handleReset}
+        runBridgeScenario={handleRunBridgeScenario}
+        setMap={setSelectedMap}
+        runEarthquakeScenario={handleRunEarthquakeScenario}
+        setGNNMap={setSelectedGNNMap}
+        setEarthquakeType={setSelectedEarthquakeType}
+        setTargetNode={(node: string) => setSelectedTargetNode(Number(node))}
+      />
       {error && <div className="error-message">{error}</div>}
     </div>
   );

@@ -212,16 +212,49 @@ def get_traffic_data(dataset):
 
 @app.route('/data/earthquake/<earthquake_type>/<target_node_id>/<dataset>')
 def get_earthquake_data(earthquake_type, target_node_id, dataset):
+
+    # load neural network model
     result = subprocess.run([
-        'python', f'connectivity_gnn_{dataset}/multitask_batch_test_only_reg_dev.py', 
+        'python', f'{dataset}/multitask_batch_test_only_reg_dev.py', 
         '--model_idx=7', '--dataset_name=data', '--imageset_name=img','--n_feat=4','--percentage=0.8','--batch_size=512', '--earthquake_type='+earthquake_type, '--target_node_id='+target_node_id
     ], capture_output=True, text=True)
+
+    # Load graph information
+    graph_info_path = f'./{dataset}/graph_info.pickle'
+    with open(graph_info_path, 'rb') as handle:
+        graph_info = pickle.load(handle)
+    
+    edge_list = graph_info.get('edge_list')
+    # Load all results
+    all_result_path = f'./{dataset}/all_result.pickle'
+    with open(all_result_path, 'rb') as handle:
+        graph_data_all = pickle.load(handle)
+    idx = 0
+    graph_data = graph_data_all[idx]
+    # Load map information
+    map_csv_path = f'./{dataset}/map.csv'
+    SpreadSheet_map = np.genfromtxt(map_csv_path, delimiter=',', dtype=None, encoding='utf-8-sig')
+    colNames_map = SpreadSheet_map[0, :]
+    node_file = SpreadSheet_map[1:, :]
+    id_list = [int(id) for id in node_file[:, np.where(colNames_map == 'id')[0][0]]]
+    lat_list = [float(lat) for lat in node_file[:, np.where(colNames_map == 'lat')[0][0]]]
+    lon_list = [float(lon) for lon in node_file[:, np.where(colNames_map == 'lon')[0][0]]]
     
     output_str = result.stdout.strip()
     output_list = json.loads(output_str.replace("'", '"'))
-    compact_json = json.dumps(output_list, separators=(',', ':'))
+
+    data = {
+        "graph_info": graph_info,
+        "edge_list": edge_list,
+        "map_nodes": {
+            "ids": id_list,
+            "lats": lat_list,
+            "lons": lon_list
+        },
+        "probabilities": output_list
+    }
     
-    return compact_json, 200, {'Content-Type': 'application/json'}
+    return jsonify(data)
 
 
 

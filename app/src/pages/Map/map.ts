@@ -36,3 +36,10 @@ export interface BridgeInfo {
 export interface BridgeData {
   bridges: BridgeInfo[];
 }
+
+export interface EarthquakeData {
+  map_nodes: MapNode;
+  node_res: number[];
+  edge_list: number[][];
+  probabilities: number[][];
+}

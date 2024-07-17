@@ -3,12 +3,17 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { SidebarProps } from "./sidebar";
 
-export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenario, setMap }: SidebarProps) => {
+export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenario, setMap, runEarthquakeScenario, setGNNMap, setEarthquakeType, setTargetNode }: SidebarProps) => {
   const [startPlace, setStartPlace] = useState<string>("");
   const [endPlace, setEndPlace] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [selectedMap, setSelectedMap] = useState<string>("connectivity_graph_small");
   const [currentSection, setCurrentSection] = useState<string>("preInputted");
+
+  // Earthquake Scenario
+  const [selectedGNNMap, setSelectedGNNMap] = useState<string>("connectivity_gnn_small");
+  const [selectedTargetNode, setSelectedTargetNode] = useState<string>("");
+  const [selectedEarthquakeType, setSelectedEarthquakeType] = useState<string>("major");
 
   const handleRunScenario = async (event: { preventDefault: () => void }) => {
     event.preventDefault();
@@ -47,25 +52,35 @@ export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridge
     setError("");
     setStartPlace("");
     setEndPlace("");
+    setSelectedTargetNode("");
   };
-
   const handleMapChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const mapName = event.target.value;
     setSelectedMap(mapName);
     setMap(mapName);
   };
 
+  const handleGNNMapChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const mapName = event.target.value;
+    setSelectedGNNMap(mapName);
+    setGNNMap(mapName);
+  };
+
+  const handleEarthquakeTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newType = event.target.value;
+    setSelectedEarthquakeType(newType);
+    setEarthquakeType(newType);
+  };
+
+  const handleTargetNodeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newTargetNode = event.target.value;
+    setSelectedTargetNode(newTargetNode);
+    setTargetNode(newTargetNode);
+  };
+
   return (
     <div className="w-1/4 p-4 shadow bg-lightBlue">
-      <h2 className="text-xl font-bold mb-4 text-cyan mt-3">Bridge Visualization</h2>
-      <div className="mb-4">
-        <h3 className="text-lg font-bold mb-2 text-cyan font-figtree">Select Dataset</h3>
-        <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={selectedMap} onChange={handleMapChange}>
-          <option value="connectivity_graph_small">Small Graph</option>
-          <option value="connectivity_graph_middle">Middle Graph</option>
-          <option value="connectivity_graph_large">Large Graph</option>
-        </select>
-      </div>
+      <h2 className="text-xl font-bold mb-4 text-cyan mt-3">Bridge and Nodes Visualization</h2>
 
       <div className="mb-4">
         <label className="block mb-1 font-bold font-figtree">Toggle Section</label>
@@ -75,6 +90,14 @@ export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridge
       {currentSection === "preInputted" ? (
         <div className="mb-4">
           <h3 className="text-lg font-bold mb-2 text-cyan font-figtree">Pre-Inputted Scenarios</h3>
+          <div className="mb-4">
+            <h3 className="text-lg font-bold mb-2 text-cyan font-figtree">Select Dataset</h3>
+            <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={selectedMap} onChange={handleMapChange}>
+              <option value="connectivity_graph_small">Small Graph</option>
+              <option value="connectivity_graph_middle">Middle Graph</option>
+              <option value="connectivity_graph_large">Large Graph</option>
+            </select>
+          </div>
           <form onSubmit={handleRunScenario}>
             <div className="mb-2">
               <label className="block mb-1 font-bold font-figtree">Start Place</label>
@@ -93,16 +116,26 @@ export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridge
         <div className="mb-4">
           <h3 className="text-lg font-bold mb-2 text-cyan font-figtree">User Scenarios</h3>
           <div className="mb-4">
-            <label className="block mb-2 font-bold font-figtree">Enter Target Node</label>
-            <input className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" placeholder="Enter Target Node" />
+            <h3 className="text-lg font-bold mb-2 text-cyan font-figtree">Select Dataset</h3>
+            <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={selectedGNNMap} onChange={handleGNNMapChange}>
+              <option value="connectivity_gnn_small">Small Graph</option>
+              <option value="connectivity_gnn_middle">Middle Graph</option>
+              <option value="connectivity_gnn_large">Large Graph</option>
+            </select>
           </div>
-          <label className="block mb-2 font-bold font-figtree">Select Scenario</label>
-          <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={selectedMap} onChange={handleMapChange}>
+          <div className="mb-4">
+            <label className="block mb-2 font-bold font-figtree">Enter Target Node</label>
+            <input className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" placeholder="Enter Target Node" value={selectedTargetNode} onChange={handleTargetNodeChange} />
+          </div>
+          <label className="block mb-2 font-bold font-figtree">Select Earthquake Type</label>
+          <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={selectedEarthquakeType} onChange={handleEarthquakeTypeChange}>
             <option value="major">Major Earthquake</option>
             <option value="moderate">Moderate Earthquake</option>
             <option value="minor">Minor Earthquake</option>
           </select>
-          <button className="mt-4 px-4 py-2 bg-green-500 text-white rounded font-figtree w-full">Run Scenarios</button>
+          <button className="mt-4 px-4 py-2 bg-green-500 text-white rounded font-figtree w-full" onClick={runEarthquakeScenario}>
+            Run Scenarios
+          </button>
         </div>
       )}
 

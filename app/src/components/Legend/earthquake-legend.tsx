@@ -26,10 +26,10 @@ const AllLegend = () => {
       div.style.backgroundColor = "white";
       div.style.padding = "10px";
       div.style.border = "1px solid black";
-      div.style.width = "300px";
+      div.style.width = "250px";
       div.style.fontFamily = "Figtree, sans-serif";
 
-      const grades = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0];
+      const grades = [0.0, 0.2, 0.4, 0.6, 0.8];
       const labels: string[] = [];
       const edgeLabels: string[] = [];
 
@@ -37,16 +37,19 @@ const AllLegend = () => {
 
       const legendsContainer = document.createElement("div");
       legendsContainer.style.display = "flex";
-      legendsContainer.style.justifyContent = "space-between";
+      legendsContainer.style.justifyContent = "center";
+      legendsContainer.style.gap = "20px";
 
       const leftDiv = document.createElement("div");
-      leftDiv.style.width = "48%";
+      leftDiv.style.width = "45%";
+      leftDiv.style.textAlign = "right";
       grades.forEach((grade, index) => {
         const color = getColorByValue(grade);
+        const nextGrade = grades[index + 1] || 1.0;
         labels.push(
-          `<div style="display: flex; align-items: center; margin-bottom: 5px;">
-            <i style="background:${color}; width: 20px; height: 20px; display: inline-block; margin-right: 8px; border-radius: 50%;"></i>
-            ${grade.toFixed(1)}${grades[index + 1] ? "–" + grades[index + 1].toFixed(1) : "+"}
+          `<div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 5px;">
+            <span style="margin-right: 8px;">${grade.toFixed(1)}–${nextGrade.toFixed(1)}</span>
+            <i style="background:${color}; width: 20px; height: 20px; display: inline-block; border-radius: 50%;"></i>
           </div>`
         );
       });
@@ -54,13 +57,14 @@ const AllLegend = () => {
       legendsContainer.appendChild(leftDiv);
 
       const rightDiv = document.createElement("div");
-      rightDiv.style.width = "48%";
+      rightDiv.style.width = "45%";
       grades.forEach((grade, index) => {
         const color = getGrayscaleColorByValue(grade);
+        const nextGrade = grades[index + 1] || 1.0;
         edgeLabels.push(
           `<div style="display: flex; align-items: center; margin-bottom: 5px;">
             <i style="background:${color}; width: 30px; height: 3px; display: inline-block; margin-right: 8px;"></i>
-            ${grade.toFixed(1)}${grades[index + 1] ? "–" + grades[index + 1].toFixed(1) : "+"}
+            ${grade.toFixed(1)}–${nextGrade.toFixed(1)}
           </div>`
         );
       });

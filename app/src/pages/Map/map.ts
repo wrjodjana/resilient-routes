@@ -41,5 +41,6 @@ export interface EarthquakeData {
   map_nodes: MapNode;
   node_res: number[];
   edge_list: number[][];
-  probabilities: number[][];
+  node_probabilities: number[][];
+  edge_probabilities: number[][];
 }

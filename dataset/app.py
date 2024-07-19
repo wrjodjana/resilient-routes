@@ -240,8 +240,9 @@ def get_earthquake_data(earthquake_type, target_node_id, dataset):
     lat_list = [float(lat) for lat in node_file[:, np.where(colNames_map == 'lat')[0][0]]]
     lon_list = [float(lon) for lon in node_file[:, np.where(colNames_map == 'lon')[0][0]]]
     
-    output_str = result.stdout.strip()
-    output_list = json.loads(output_str.replace("'", '"'))
+    output_str = result.stdout.strip().split('\n')
+    edge_probabilities = json.loads(output_str[0])
+    node_probabilities = json.loads(output_str[1])
 
     data = {
         "graph_info": graph_info,
@@ -251,7 +252,8 @@ def get_earthquake_data(earthquake_type, target_node_id, dataset):
             "lats": lat_list,
             "lons": lon_list
         },
-        "probabilities": output_list
+        "edge_probabilities": edge_probabilities,
+        "node_probabilities": node_probabilities
     }
     
     return jsonify(data)

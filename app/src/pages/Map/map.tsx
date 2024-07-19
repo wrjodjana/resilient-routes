@@ -171,18 +171,32 @@ export const BaseMap = () => {
           )}
           {earthquakeData && runEarthquakeScenario && (
             <>
+              {earthquakeData &&
+                earthquakeData.edge_list &&
+                earthquakeData.edge_list.map((edge, index) => (
+                  <Polyline
+                    key={index}
+                    positions={[
+                      [earthquakeData.map_nodes.lats[edge[0]], earthquakeData.map_nodes.lons[edge[0]]],
+                      [earthquakeData.map_nodes.lats[edge[1]], earthquakeData.map_nodes.lons[edge[1]]],
+                    ]}
+                    pathOptions={{ color: "black" }}
+                  >
+                    <Popup>Edge Feature: {earthquakeData.edge_probabilities[index][0].toFixed(2)}</Popup>
+                  </Polyline>
+                ))}
               {earthquakeData.map_nodes.ids.map((id: number, index: number) => (
                 <CircleMarker
                   key={id}
                   center={[earthquakeData.map_nodes.lats[index], earthquakeData.map_nodes.lons[index]]}
-                  color={id === selectedTargetNode ? "red" : getColorByValue(earthquakeData.probabilities[index][0])}
+                  color={id === selectedTargetNode ? "red" : getColorByValue(earthquakeData.node_probabilities[index][0])}
                   radius={5}
                   fillOpacity={1}
                 >
                   <Popup>
                     Node ID: {id}
                     <br />
-                    Probability: {earthquakeData.probabilities[index][0].toFixed(2)}
+                    Probability: {earthquakeData.node_probabilities[index][0].toFixed(2)}
                   </Popup>
                 </CircleMarker>
               ))}

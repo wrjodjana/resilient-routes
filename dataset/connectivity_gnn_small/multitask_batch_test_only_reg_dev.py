@@ -85,7 +85,7 @@ class BridgeDataset(DGLDataset):
         g.ndata['class'] = torch.tensor(graph_data['node_class'], dtype=torch.long)
         g.edata['feat'] = edge_feat
 
-        print(g.edges(form='uv'))
+        # print(g.edges(form='uv'))
 
         self.graphs.append(g.to(device))
 
@@ -123,7 +123,7 @@ def test_multitask_record(dataset, target_node_id, model, start_id, stop_id, val
         edge_feat = g.edata['feat']
         reg_label = g.ndata['label']
         cla_label = g.ndata['class']
-        print(edge_feat.numpy())
+        print(edge_feat.numpy().tolist())
         ### Forward
         reg_logits = model(g, node_feat, edge_feat)
 

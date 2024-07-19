@@ -22,7 +22,7 @@ export interface NodeData {
     longitude: number;
     node_id: string;
   };
-  path?: number[];
+  path: number[];
 }
 
 export interface BridgeInfo {

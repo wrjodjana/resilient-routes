@@ -5,6 +5,7 @@ import "leaflet/dist/leaflet.css";
 import AllLegend from "../../components/Legend/all-legend.tsx";
 import BridgeLegend from "../../components/Legend/bridge-legend.tsx";
 import SelectLegend from "../../components/Legend/select-legend.tsx";
+import EarthquakeLegend from "../../components/Legend/earthquake-legend.tsx";
 import { MapNode, Data, NodeData, BridgeInfo, BridgeData, EarthquakeData } from "./map";
 
 export const BaseMap = () => {
@@ -22,41 +23,47 @@ export const BaseMap = () => {
   const [selectedTargetNode, setSelectedTargetNode] = useState<number>(0);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/data/${selectedMap}`)
-      .then((response) => response.json())
-      .then((data: Data) => {
-        setData(data);
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-        setError("Failed to load data. Please try again later.");
-      });
-  }, [selectedMap]);
+    if (runAllScenarios || selectedNodeData) {
+      fetch(`http://localhost:5000/data/${selectedMap}`)
+        .then((response) => response.json())
+        .then((data: Data) => {
+          setData(data);
+        })
+        .catch((error) => {
+          console.error("Error fetching data:", error);
+          setError("Failed to load data. Please try again later.");
+        });
+    }
+  }, [selectedMap, runAllScenarios, selectedNodeData]);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/data/bridges/${selectedMap}`)
-      .then((response) => response.json())
-      .then((data: BridgeData) => {
-        setBridgeData(data);
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-        setError("Failed to load data. Please try again later.");
-      });
-  }, [selectedMap]);
+    if (runBridgeScenario) {
+      fetch(`http://localhost:5000/data/bridges/${selectedMap}`)
+        .then((response) => response.json())
+        .then((data: BridgeData) => {
+          setBridgeData(data);
+        })
+        .catch((error) => {
+          console.error("Error fetching data:", error);
+          setError("Failed to load data. Please try again later.");
+        });
+    }
+  }, [selectedMap, runBridgeScenario]);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/data/earthquake/${selectedEarthquakeType}/${selectedTargetNode}/${selectedGNNMap}`)
-      .then((response) => response.json())
-      .then((data: EarthquakeData) => {
-        setEarthquakeData(data);
-      })
+    if (runEarthquakeScenario) {
+      fetch(`http://localhost:5000/data/earthquake/${selectedEarthquakeType}/${selectedTargetNode}/${selectedGNNMap}`)
+        .then((response) => response.json())
+        .then((data: EarthquakeData) => {
+          setEarthquakeData(data);
+        })
 
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-        setError("Failed to load data. Please try again later.");
-      });
-  }, [selectedGNNMap, selectedEarthquakeType, selectedTargetNode]);
+        .catch((error) => {
+          console.error("Error fetching data:", error);
+          setError("Failed to load data. Please try again later.");
+        });
+    }
+  }, [selectedGNNMap, selectedEarthquakeType, selectedTargetNode, runEarthquakeScenario]);
 
   const handleRunAllScenarios = () => {
     setRunAllScenarios(true);
@@ -87,6 +94,16 @@ export const BaseMap = () => {
     const lightness = Math.round(100 - value * 80);
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   }
+
+  function getGrayscaleColorByValue(value: number) {
+    const clampedValue = Math.max(0, Math.min(1, value));
+    const grayValue = Math.round(128 * (1 - clampedValue));
+    return `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
+  }
+
+  console.log("selectedNodeData:", selectedNodeData);
+  console.log("data:", data);
+  console.log("path:", selectedNodeData?.path);
 
   return (
     <div className="flex h-screen">
@@ -180,7 +197,7 @@ export const BaseMap = () => {
                       [earthquakeData.map_nodes.lats[edge[0]], earthquakeData.map_nodes.lons[edge[0]]],
                       [earthquakeData.map_nodes.lats[edge[1]], earthquakeData.map_nodes.lons[edge[1]]],
                     ]}
-                    pathOptions={{ color: "black" }}
+                    pathOptions={{ color: getGrayscaleColorByValue(earthquakeData.edge_probabilities[index][0]) }}
                   >
                     <Popup>Edge Feature: {earthquakeData.edge_probabilities[index][0].toFixed(2)}</Popup>
                   </Polyline>
@@ -204,6 +221,7 @@ export const BaseMap = () => {
           )}
 
           {runAllScenarios && <AllLegend />}
+          {runEarthquakeScenario && <EarthquakeLegend />}
           {runBridgeScenario && <BridgeLegend />}
         </MapContainer>
       </div>

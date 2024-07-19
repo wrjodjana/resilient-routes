@@ -71,6 +71,7 @@ def get_nodes_data(dataset):
         "path": path
     }
     return jsonify(data)
+
 def fetch_node_data(node_id, dataset):
     csv_file_path = f'./{dataset}/map.csv'
     with open(csv_file_path, mode='r', encoding='utf-8-sig') as file:
@@ -83,6 +84,7 @@ def fetch_node_data(node_id, dataset):
                     "longitude": float(row['lon'])
                 }
     return {"node_id": node_id, "error": "Node data not found"}
+
 def dijkstra(graph, start, end):
     min_heap = [(0, start, [])]
     visited = set()
@@ -135,6 +137,7 @@ def get_bridges_data(dataset):
         "bridges": bridge_info,
     }
     return jsonify(data)
+
 ################################################
 @app.route('/data/matrix/<dataset>')
 def get_matrix_data(dataset):
@@ -160,6 +163,7 @@ def get_matrix_data(dataset):
     }
     
     return jsonify(data)
+
 def convert_keys(data):
     new_data = {}
     for (start, end), value in data.items():
@@ -167,6 +171,7 @@ def convert_keys(data):
         new_key = f"{start + 1}-{end + 1}"
         new_data[new_key] = value
     return new_data
+
 @app.route('/data/traffic/<dataset>')
 def get_traffic_data(dataset):
     traffic_path = f'./{dataset}/data_0.pickle'

@@ -35,29 +35,33 @@ export const TrafficMap = () => {
   const [mapZoom, setMapZoom] = useState<number>(12);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/data/matrix/${selectedMap}`)
-      .then((response) => response.json())
-      .then((data: MatrixData) => {
-        setMatrixData(data);
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-        setError("Failed to load data. Please try again later.");
-      });
-  }, [selectedMap]);
+    if (selectedNodeId) {
+      fetch(`http://localhost:5000/data/matrix/${selectedMap}`)
+        .then((response) => response.json())
+        .then((data: MatrixData) => {
+          setMatrixData(data);
+        })
+        .catch((error) => {
+          console.error("Error fetching data:", error);
+          setError("Failed to load data. Please try again later.");
+        });
+    }
+  }, [selectedMap, selectedNodeId]);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/data/traffic/${selectedMap}`)
-      .then((response) => response.json())
-      .then((data: TrafficData) => {
-        setTrafficData(data);
-        console.log(data);
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-        setError("Failed to load data. Please try again later.");
-      });
-  }, [selectedMap]);
+    if (flowScenarios || capacityScenarios || ratioScenarios) {
+      fetch(`http://localhost:5000/data/traffic/${selectedMap}`)
+        .then((response) => response.json())
+        .then((data: TrafficData) => {
+          setTrafficData(data);
+          console.log(data);
+        })
+        .catch((error) => {
+          console.error("Error fetching data:", error);
+          setError("Failed to load data. Please try again later.");
+        });
+    }
+  }, [selectedMap, flowScenarios, capacityScenarios, ratioScenarios]);
 
   const handleReset = () => {
     setError("");

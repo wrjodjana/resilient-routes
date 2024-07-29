@@ -26,8 +26,15 @@ export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridge
       return;
     }
 
-    if (parseInt(startPlace) > 102 || parseInt(startPlace) < 0 || parseInt(endPlace) > 102 || parseInt(endPlace) < 0) {
-      setError("Invalid node IDs provided");
+    const maxNodeId =
+      {
+        connectivity_graph_small: 38,
+        connectivity_graph_middle: 83,
+        connectivity_graph_large: 102,
+      }[selectedMap] || 0;
+
+    if (parseInt(startPlace) > maxNodeId || parseInt(startPlace) < 0 || parseInt(endPlace) > maxNodeId || parseInt(endPlace) < 0) {
+      setError(`Invalid node IDs provided. For the selected map, node IDs should be between 0 and ${maxNodeId}.`);
       return;
     }
 
@@ -75,9 +82,22 @@ export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridge
   const handleTargetNodeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newTargetNode = event.target.value;
     setSelectedTargetNode(newTargetNode);
+
+    const maxNodeId =
+      {
+        connectivity_gnn_small: 38,
+        connectivity_gnn_middle: 83,
+        connectivity_gnn_large: 102,
+      }[selectedGNNMap] || 0;
+
+    if (newTargetNode !== "" && (parseInt(newTargetNode) < 0 || parseInt(newTargetNode) > maxNodeId)) {
+      setError(`Invalid target node. For the selected map, node IDs should be between 0 and ${maxNodeId}.`);
+    } else {
+      setError("");
+    }
+
     setTargetNode(newTargetNode);
   };
-
   return (
     <div className="w-1/4 p-4 shadow bg-lightBlue">
       <h2 className="text-xl font-bold mb-4 text-cyan mt-3">Bridge and Nodes Visualization</h2>

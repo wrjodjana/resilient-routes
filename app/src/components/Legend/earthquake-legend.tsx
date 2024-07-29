@@ -33,7 +33,7 @@ const AllLegend = () => {
       const labels: string[] = [];
       const edgeLabels: string[] = [];
 
-      div.innerHTML = "<h4 style='margin-bottom: 10px; font-weight: bold; text-align: center;'>Earthquake Probabilities</h4>";
+      div.innerHTML = "<h4 style='margin-bottom: 10px; font-weight: bold; text-align: center;'>Connectivity and Link Failure Probabilities</h4>";
 
       const legendsContainer = document.createElement("div");
       legendsContainer.style.display = "flex";

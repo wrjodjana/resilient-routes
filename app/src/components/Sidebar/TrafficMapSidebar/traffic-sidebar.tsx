@@ -6,6 +6,7 @@ export const TrafficSidebar = ({ reset, setMap, addNodeId, runRatioScenarios, ru
   const [error, setError] = useState<string>("");
   const [selectedMap, setSelectedMap] = useState<string>("sta_siouxfalls");
   const [nodeId, setNodeId] = useState<number | "">("");
+  const [currentSection, setCurrentSection] = useState<string>("preInputted");
 
   const handleReset = () => {
     reset();
@@ -74,33 +75,60 @@ export const TrafficSidebar = ({ reset, setMap, addNodeId, runRatioScenarios, ru
   return (
     <div className="w-1/4 p-4 shadow bg-lightBlue">
       <h2 className="text-xl font-bold mb-4 text-cyan mt-3">Traffic Visualization</h2>
-      <div className="mb-4">
-        <label className="block mb-2 font-bold font-figtree">Select Dataset</label>
-        <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={selectedMap} onChange={handleMapChange}>
-          <option value="sta_siouxfalls">Sioux Falls</option>
-          <option value="sta_EMA">Eastern Massachussets Network</option>
-          <option value="sta_anaheim">Anaheim</option>
-        </select>
-      </div>
-      <div className="mb-4">
-        <label className="block mb-2 font-bold font-figtree">Enter Node ID</label>
-        <input value={nodeId} onChange={(e) => setNodeId(Number(e.target.value))} className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" placeholder="Enter Node ID" />
-        <button onClick={handleAddNodeId} className="mt-2 px-4 py-2 border bg-blue-500 text-white border-gray-300 rounded font-figtree w-full">
-          Run Origin-Destination Demand Scenarios
-        </button>
-      </div>
-      {error && <div className="text-red mb-2">{error}</div>}
-      <button onClick={runRatioScenarios} className="mt-4 px-4 py-2 border bg-green-500 text-white border-gray-300 rounded font-figtree w-full">
-        Run Ratio Scenarios
-      </button>
 
-      <button onClick={runFlowScenarios} className="mt-4 px-4 py-2 border bg-orange-500 text-white border-gray-300 rounded font-figtree w-full">
-        Run Flow Scenarios
-      </button>
+      <div className="mb-4">
+        <label className="block mb-1 font-bold font-figtree">Toggle Section</label>
+        <input type="range" min="0" max="1" value={currentSection === "preInputted" ? 0 : 1} onChange={(e) => setCurrentSection(e.target.value === "0" ? "preInputted" : "userScenarios")} />
+      </div>
+      {currentSection === "preInputted" ? (
+        <>
+          <div className="mb-4">
+            <label className="block mb-2 font-bold font-figtree">Select Dataset</label>
+            <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={selectedMap} onChange={handleMapChange}>
+              <option value="sta_siouxfalls">Sioux Falls</option>
+              <option value="sta_anaheim">Anaheim</option>
+            </select>
+          </div>
+          <div className="mb-4">
+            <label className="block mb-2 font-bold font-figtree">Enter Node ID</label>
+            <input value={nodeId} onChange={(e) => setNodeId(Number(e.target.value))} className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" placeholder="Enter Node ID" />
+            <button onClick={handleAddNodeId} className="mt-2 px-4 py-2 border bg-blue-500 text-white border-gray-300 rounded font-figtree w-full">
+              Run Origin-Destination Demand Scenarios
+            </button>
+          </div>
 
-      <button onClick={runCapacityScenarios} className="mt-4 px-4 py-2 border bg-purple-500 text-white border-gray-300 rounded font-figtree w-full">
-        Run Capacity Scenarios
-      </button>
+          {error && <div className="text-red mb-2">{error}</div>}
+          <button onClick={runRatioScenarios} className="mt-4 px-4 py-2 border bg-green-500 text-white border-gray-300 rounded font-figtree w-full">
+            Run Ratio Scenarios
+          </button>
+
+          <button onClick={runFlowScenarios} className="mt-4 px-4 py-2 border bg-orange-500 text-white border-gray-300 rounded font-figtree w-full">
+            Run Flow Scenarios
+          </button>
+
+          <button onClick={runCapacityScenarios} className="mt-4 px-4 py-2 border bg-purple-500 text-white border-gray-300 rounded font-figtree w-full">
+            Run Capacity Scenarios
+          </button>
+        </>
+      ) : (
+        <div className="mb-4">
+          <h3 className="text-lg font-bold mb-2 text-cyan font-figtree">User Scenarios</h3>
+          <div className="mb-4">
+            <label className="block mb-2 font-bold font-figtree">Select Dataset</label>
+            <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree">
+              <option value="">Sioux Falls</option>
+              <option value="">Anaheim</option>
+            </select>
+          </div>
+          <label className="block mb-2 font-bold font-figtree">Select Earthquake Type</label>
+          <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree">
+            <option value="major">Major Earthquake</option>
+            <option value="moderate">Moderate Earthquake</option>
+            <option value="minor">Minor Earthquake</option>
+          </select>
+          <button className="mt-4 px-4 py-2 bg-green-500 text-white rounded font-figtree w-full">Run Scenarios</button>
+        </div>
+      )}
 
       <button onClick={handleReset} className="mt-4 px-4 py-2 border border-gray-300 rounded font-figtree w-full">
         Reset

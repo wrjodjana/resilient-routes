@@ -263,6 +263,20 @@ def get_earthquake_data(earthquake_type, target_node_id, dataset):
     
     return jsonify(data)
 
+@app.route('/data/traffic-earthquake/<earthquake_type>/<dataset>')
+def get_traffic_earthquake(earthquake_type, dataset):
+
+    result = subprocess.run([
+        'python', f'/sta_dataset/kfold_hetero_adaptive.py',
+        '--map_name='+dataset,'--model_idx=16',
+        '--train_data_dir_list', f'data_{dataset}_{earthquake_type}_00',
+        '--test_data_dir_list',f'data_{dataset}_{earthquake_type}_00',
+        '--train_num_sample_list=1','--test_num_sample_list=1','--batch_size=2',
+        '--gpu=-1'
+    ], capture_output=True, text=True)
+
+
+
 
 
 if __name__ == '__main__':

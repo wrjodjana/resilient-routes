@@ -88,9 +88,9 @@ export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridge
         connectivity_gnn_small: 38,
         connectivity_gnn_middle: 83,
         connectivity_gnn_large: 102,
-      }[selectedGNNMap] || 0;
+      }[selectedGNNMap] || -1;
 
-    if (newTargetNode !== "" && (parseInt(newTargetNode) < 0 || parseInt(newTargetNode) > maxNodeId)) {
+    if (!newTargetNode || (newTargetNode !== "" && (parseInt(newTargetNode) < 0 || parseInt(newTargetNode) > maxNodeId))) {
       setError(`Invalid target node. For the selected map, node IDs should be between 0 and ${maxNodeId}.`);
     } else {
       setError("");

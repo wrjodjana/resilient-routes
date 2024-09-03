@@ -156,24 +156,23 @@ def train(train_dataloader, test_dataloader, model, args, fold_idx):
     scheduler = MultiStepLR(optimizer, milestones=[100], gamma=0.2)
     
     train_loss_list, train_residue_list, test_loss_list, test_residue_list = [], [], [], []
-    for e in range(args.epoch):
-        t0 = time.time()
-        model.train()
-        train_loss, train_residue = [], []
-        g, edge_ratio, edge_flow = next(iter(train_dataloader))
+    t0 = time.time()
+    model.train()
+    train_loss, train_residue = [], []
+    g, edge_ratio, edge_flow = next(iter(train_dataloader))
 
-        g = g.to(device)
-        edge_ratio = edge_ratio.to(device)
-        edge_flow = edge_flow.to(device)
+    g = g.to(device)
+    edge_ratio = edge_ratio.to(device)
+    edge_flow = edge_flow.to(device)
 
-        node_feat = g.nodes['node'].data['feat']
-        edge_feat = g.edges['connect'].data['feat']
+    node_feat = g.nodes['node'].data['feat']
+    edge_feat = g.edges['connect'].data['feat']
 
-        # ratio
-        pred_ratio = model(g, node_feat, edge_feat)
-        print(pred_ratio.detach().cpu().numpy())
-            # flow
-        pred_flow = pred_ratio * g.edges['connect'].data['capacity'] # print this
+    # ratio
+    pred_ratio = model(g, node_feat, edge_feat)
+    # flow
+    pred_flow = pred_ratio * g.edges['connect'].data['capacity'] # print this
+        
             
     #         # normal loss
     #         if args.loss == 1:
@@ -345,12 +344,14 @@ if train_data_dir_list == test_data_dir_list:
 
     data_batch = ConcatDataset(all_data_batch)
 
-    kf = KFold(n_splits=2, shuffle=True, random_state=42)
-    for fold_idx, (train_index, test_index) in enumerate(kf.split(data_batch)):
-        # print(f"Fold {fold_idx}:")
-        # print(f"  Train: index={train_index}")
-        # print(f"  Test:  index={test_index}")
-
+    # Check the number of samples
+    n_samples = len(data_batch)
+    
+    if n_samples < 2:
+        # If there's only one sample, use it for both training and testing
+        train_index = test_index = [0]
+        fold_idx = 0
+        
         train_batch = Subset(data_batch, train_index)
         test_batch = Subset(data_batch, test_index)
         
@@ -359,10 +360,35 @@ if train_data_dir_list == test_data_dir_list:
         
         if args.model_idx == 16: model = TransformerModel_Hetero5(in_feats=n_node, h_feats=32, num_head=4).to(device)
         if args.model_idx == 17: model = TransformerModel_Hetero5(in_feats=n_node, h_feats=32, num_head=4, n_od=train_dataset.n_od, batch_size=args.batch_size).to(device)
-
         
-        # Create the model. The output has three pred_ratio for three classes.
+        def load_partial_state_dict(model, state_dict):
+            model_state_dict = model.state_dict()
+            filtered_state_dict = {k: v for k, v in state_dict.items() if k in model_state_dict and v.shape == model_state_dict[k].shape}
+            model_state_dict.update(filtered_state_dict)
+            model.load_state_dict(model_state_dict)
+        
+        model_name = model.__class__.__name__
+        file_name = ' '.join(train_data_dir_list) + '_' + ' '.join(test_data_dir_list) + '_15_0.pth'
+        checkpoint = torch.load(f'./trained_model/{file_name}', map_location=device)
+        load_partial_state_dict(model, checkpoint)
+        
+        # Create the model and train
         train(train_dataloader, test_dataloader, model, args, fold_idx)
+    else:
+        # If there are at least 2 samples, proceed with KFold
+        kf = KFold(n_splits=min(2, n_samples), shuffle=True, random_state=42)
+        for fold_idx, (train_index, test_index) in enumerate(kf.split(data_batch)):
+            train_batch = Subset(data_batch, train_index)
+            test_batch = Subset(data_batch, test_index)
+            
+            train_dataloader = DataLoader(train_batch, batch_size=args.batch_size, shuffle=True, collate_fn=collate)
+            test_dataloader = DataLoader(test_batch, batch_size=args.batch_size, shuffle=True, collate_fn=collate)
+            
+            if args.model_idx == 16: model = TransformerModel_Hetero5(in_feats=n_node, h_feats=32, num_head=4).to(device)
+            if args.model_idx == 17: model = TransformerModel_Hetero5(in_feats=n_node, h_feats=32, num_head=4, n_od=train_dataset.n_od, batch_size=args.batch_size).to(device)
+
+            # Create the model and train
+            train(train_dataloader, test_dataloader, model, args, fold_idx)
 else:
     all_train_batch, all_test_batch = [], []
     for train_num_sample, train_data_dir in zip(train_num_sample_list, train_data_dir_list):

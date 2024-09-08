@@ -1,5 +1,6 @@
 from flask import *
 import pickle
+import json
 import numpy as np
 import pandas as pd
 from flask_cors import CORS
@@ -246,6 +247,7 @@ def get_earthquake_data(earthquake_type, target_node_id, dataset):
     lon_list = [float(lon) for lon in node_file[:, np.where(colNames_map == 'lon')[0][0]]]
     
     output_str = result.stdout.strip().split('\n')
+    print(output_str)
     edge_probabilities = json.loads(output_str[0])
     node_probabilities = json.loads(output_str[1])
 
@@ -266,19 +268,41 @@ def get_earthquake_data(earthquake_type, target_node_id, dataset):
 
 @app.route('/data/traffic-earthquake/<earthquake_type>/<dataset>')
 def get_traffic_earthquake(earthquake_type, dataset):
-
     result = subprocess.run([
-        'python', f'/sta_dataset/kfold_hetero_adaptive.py',
-        '--map_name='+dataset,'--model_idx=16',
-        '--train_data_dir_list', f'data_{dataset}_{earthquake_type}_00',
-        '--test_data_dir_list',f'data_{dataset}_{earthquake_type}_00',
-        '--train_num_sample_list=1','--test_num_sample_list=1','--batch_size=2',
+        'python', 'sta_dataset/kfold_hetero_adaptive.py',
+        '--map_name=' + dataset,
+        '--model_idx=16',
+        '--train_data_dir_list', f'data_{dataset}_major_00', f'data_{dataset}_minor_00', f'data_{dataset}_moderate_00',
+        '--test_data_dir_list', f'data_{dataset}_{earthquake_type}_00',
+        '--train_num_sample_list', '1', '1', '1', 
+        '--test_num_sample_list', '1', 
+        '--batch_size=1',
         '--gpu=-1'
     ], capture_output=True, text=True)
 
+    node_csv = f'./sta_dataset/{dataset}/modified_coord.csv'
+    SpreadSheet_traffic = np.genfromtxt(node_csv, delimiter=',', dtype=None, encoding='utf-8-sig')
+    colNames_traffic = SpreadSheet_traffic[0, :]
+    node_file = SpreadSheet_traffic[1:, :]
+    id_list = [int(id) for id in node_file[:, np.where(colNames_traffic == 'id')[0][0]]]
+    lat_list = [float(lat) for lat in node_file[:, np.where(colNames_traffic == 'lat')[0][0]]]
+    lon_list = [float(lon) for lon in node_file[:, np.where(colNames_traffic == 'lon')[0][0]]]
+    
+    output_str = result.stdout.strip().split('\n')
+    print(output_str)
+    ratio_probabilities = json.loads(output_str[0])
+    flow_probabilities = json.loads(output_str[1])
 
-
-
+    data = {
+        "map_nodes": {
+            "ids": id_list,
+            "lats": lat_list,
+            "lons": lon_list
+        },
+        "ratio_probabilities": ratio_probabilities,
+        "flow_probabilities": flow_probabilities
+    }
+    return jsonify(data)
 
 if __name__ == '__main__':
     app.run(debug=True)

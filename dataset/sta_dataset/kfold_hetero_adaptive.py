@@ -64,7 +64,7 @@ def collate(samples):
 class TrafficAssignmentDataset(DGLDataset):
     def __init__(self, num_sample, data_dir, n_node, map_name):
         self.num_sample = num_sample
-        self.data_dir = data_dir
+        self.data_dir = os.path.join("sta_dataset", data_dir) 
         self.n_node = n_node
         self.map_name = map_name
         self.cap_ratio = {'Sioux':1000, 'EMA':1000, 'Anaheim':800, 'ANAHEIM':800}
@@ -74,7 +74,7 @@ class TrafficAssignmentDataset(DGLDataset):
     def process(self):
         self.graphs = []
         
-        coord_all = np.loadtxt('./{}/coord.csv'.format(map_name), delimiter=' ')
+        coord_all = np.loadtxt('sta_dataset/{}/coord.csv'.format(map_name), delimiter=' ')
         coord = coord_all[:, 3:]
         
         # load each graph
@@ -204,7 +204,7 @@ if args.model_idx == 16: model = TransformerModel_Hetero5(in_feats=n_node, h_fea
 
 model_name = model.__class__.__name__
 file_name = '{}_{}_0.pth'.format(args.map_name, args.model_idx)
-checkpoint = torch.load(f'./trained_model/{file_name}', map_location=device)
+checkpoint = torch.load(f'sta_dataset/trained_model/{file_name}', map_location=device)
 
 # checkpoint = torch.load(PATH, weights_only=True)
 model.load_state_dict(checkpoint)
@@ -212,7 +212,8 @@ model.load_state_dict(checkpoint)
 
 a, b = test(test_dataloader, model, args) ## train --> test
 
-print(a.squeeze())
+print(a.detach().numpy().tolist())
+print(b.detach().numpy().tolist())
 
 
 # if train_data_dir_list == test_data_dir_list:

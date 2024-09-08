@@ -149,7 +149,7 @@ class TrafficAssignmentDataset(DGLDataset):
     def __len__(self):
         return len(self.graphs)
 
-def train(train_dataloader, model, args):
+def test(test_dataloader, model, args):
     time_total = 0
     min_test_loss = 1e9
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -159,7 +159,7 @@ def train(train_dataloader, model, args):
     t0 = time.time()
     model.train()
     train_loss, train_residue = [], []
-    g, edge_ratio, edge_flow = next(iter(train_dataloader))
+    g, edge_ratio, edge_flow = next(iter(test_dataloader))
 
     g = g.to(device)
     edge_ratio = edge_ratio.to(device)
@@ -210,10 +210,9 @@ checkpoint = torch.load(f'./trained_model/{file_name}', map_location=device)
 model.load_state_dict(checkpoint)
 
 
-a, b = train(test_dataloader, model, args) ## train --> test
+a, b = test(test_dataloader, model, args) ## train --> test
 
 print(a.squeeze())
-print(b.shape)
 
 
 # if train_data_dir_list == test_data_dir_list:

@@ -263,6 +263,7 @@ def get_earthquake_data(earthquake_type, target_node_id, dataset):
     
     return jsonify(data)
 
+
 @app.route('/data/traffic-earthquake/<earthquake_type>/<dataset>')
 def get_traffic_earthquake(earthquake_type, dataset):
 

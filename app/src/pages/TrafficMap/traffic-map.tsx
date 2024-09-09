@@ -83,7 +83,7 @@ export const TrafficMap = () => {
           setError("Failed to load data. Please try again later.");
         });
     }
-  }, [selectedGNNMap, GNNFlowScenarios, GNNRatioScenarios]);
+  }, [selectedGNNMap, GNNFlowScenarios, GNNRatioScenarios, selectedEarthquakeType]);
 
   const handleReset = () => {
     setError("");
@@ -91,6 +91,8 @@ export const TrafficMap = () => {
     setRatioScenarios(false);
     setFlowScenarios(false);
     setCapacityScenarios(false);
+    setGNNFlowScenarios(false);
+    setGNNRatioScenarios(false);
   };
 
   const handleAddNodeId = (nodeId: number) => {
@@ -507,7 +509,7 @@ export const TrafficMap = () => {
                   ] as [number, number][];
 
                   return (
-                    <Polyline key={key} positions={positions} color={selectedGNNMap === "Sioux" ? colorFlowSiouxFalls(flow) : selectedGNNMap === "ANAHEIM" ? colorFlowAnaheim(flow) : selectedGNNMap === "EMA" ? colorFlowEMA(flow) : "blue"}>
+                    <Polyline key={key} positions={positions}>
                       <Popup>Flow: {trafficEarthquakeData.flow_probabilities[index][0].toFixed(2)}</Popup>
                     </Polyline>
                   );
@@ -547,11 +549,7 @@ export const TrafficMap = () => {
                   ] as [number, number][];
 
                   return (
-                    <Polyline
-                      key={key}
-                      positions={positions}
-                      color={selectedGNNMap === "Sioux" ? colorRatioSiouxFalls(ratio) : selectedGNNMap === "ANAHEIM" ? colorRatioAnaheim(ratio) : selectedGNNMap === "EMA" ? colorRatioEMA(ratio) : "blue"}
-                    >
+                    <Polyline key={key} positions={positions}>
                       <Popup>Ratio: {trafficEarthquakeData.ratio_probabilities[index][0].toFixed(2)}</Popup>
                     </Polyline>
                   );

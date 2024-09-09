@@ -292,7 +292,6 @@ def get_traffic_earthquake(earthquake_type, dataset):
     output_str = result.stdout.strip().split('\n')
     ratio_probabilities = json.loads(output_str[0])
     flow_probabilities = json.loads(output_str[1])
-    print(flow_probabilities)
 
     traffic_path = f'./sta_dataset/{dataset}/data_0.pickle'
     with open(traffic_path, 'rb') as handle:

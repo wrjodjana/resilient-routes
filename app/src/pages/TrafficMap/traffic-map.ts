@@ -15,3 +15,11 @@ export interface TrafficData {
   flow: { [key: string]: number };
   capacity: { [key: string]: number };
 }
+
+export interface TrafficEarthquakeData {
+  map_nodes: MapNode;
+  ratio_probabilities: number[][];
+  flow_probabilities: number[][];
+  flow: { [key: string]: number };
+  ratio: { [key: string]: number };
+}

@@ -250,6 +250,7 @@ def get_earthquake_data(earthquake_type, target_node_id, dataset):
     print(output_str)
     edge_probabilities = json.loads(output_str[0])
     node_probabilities = json.loads(output_str[1])
+    
 
     data = {
         "graph_info": graph_info,
@@ -289,9 +290,15 @@ def get_traffic_earthquake(earthquake_type, dataset):
     lon_list = [float(lon) for lon in node_file[:, np.where(colNames_traffic == 'lon')[0][0]]]
     
     output_str = result.stdout.strip().split('\n')
-    print(output_str)
     ratio_probabilities = json.loads(output_str[0])
     flow_probabilities = json.loads(output_str[1])
+    print(flow_probabilities)
+
+    traffic_path = f'./sta_dataset/{dataset}/data_0.pickle'
+    with open(traffic_path, 'rb') as handle:
+        traffic_graph = pickle.load(handle)
+    ratio = convert_keys(traffic_graph.get('ratio', {}))    
+    flow = convert_keys(traffic_graph.get('flow', {}))
 
     data = {
         "map_nodes": {
@@ -299,6 +306,8 @@ def get_traffic_earthquake(earthquake_type, dataset):
             "lats": lat_list,
             "lons": lon_list
         },
+        "ratio": ratio,
+        "flow": flow,
         "ratio_probabilities": ratio_probabilities,
         "flow_probabilities": flow_probabilities
     }

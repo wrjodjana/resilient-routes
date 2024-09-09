@@ -2,16 +2,20 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { SidebarProps } from "./traffic-sidebar";
 
-export const TrafficSidebar = ({ reset, setMap, addNodeId, runRatioScenarios, runFlowScenarios, runCapacityScenarios, setMapCenter, setMapZoom }: SidebarProps) => {
+export const TrafficSidebar = ({ reset, setMap, addNodeId, runRatioScenarios, runFlowScenarios, runCapacityScenarios, setMapCenter, setMapZoom, runGNNFlowScenarios, runGNNRatioScenarios, setGNNMap, setEarthquakeType }: SidebarProps) => {
   const [error, setError] = useState<string>("");
   const [selectedMap, setSelectedMap] = useState<string>("sta_siouxfalls");
   const [nodeId, setNodeId] = useState<number | "">("");
   const [currentSection, setCurrentSection] = useState<string>("preInputted");
 
+  const [selectedGNNMap, setSelectedGNNMap] = useState<string>("Sioux");
+  const [selectedEarthquakeType, setSelectedEarthquakeType] = useState<string>("major");
+
   const handleReset = () => {
     reset();
     setError("");
     setNodeId("");
+    setSelectedEarthquakeType("");
   };
 
   const handleMapChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -40,6 +44,40 @@ export const TrafficSidebar = ({ reset, setMap, addNodeId, runRatioScenarios, ru
         setMapCenter([43.546, -96.7313]);
         setMapZoom(12);
     }
+  };
+
+  const handleGNNMapChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const mapName = event.target.value;
+    setSelectedGNNMap(mapName);
+    setGNNMap(mapName);
+
+    switch (mapName) {
+      case "Sioux":
+        console.log("Setting center to Sioux Falls");
+        setMapCenter([43.546, -96.7313]);
+        setMapZoom(12);
+        break;
+      case "EMA":
+        console.log("Setting center to Eastern Massachusetts");
+        setMapCenter([42.3601, -71.0589]);
+        setMapZoom(10);
+        break;
+      case "ANAHEIM":
+        console.log("Setting center to Anaheim");
+        setMapCenter([33.8366, -117.9143]);
+        setMapZoom(11);
+        break;
+      default:
+        console.log("Setting default center");
+        setMapCenter([43.546, -96.7313]);
+        setMapZoom(12);
+    }
+  };
+
+  const handleEarthquakeTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newType = event.target.value;
+    setSelectedEarthquakeType(newType);
+    setEarthquakeType(newType);
   };
 
   const handleAddNodeId = () => {
@@ -115,24 +153,31 @@ export const TrafficSidebar = ({ reset, setMap, addNodeId, runRatioScenarios, ru
           <h3 className="text-lg font-bold mb-2 text-cyan font-figtree">User Scenarios</h3>
           <div className="mb-4">
             <label className="block mb-2 font-bold font-figtree">Select Dataset</label>
-            <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree">
-              <option value="">Sioux Falls</option>
-              <option value="">Anaheim</option>
+            <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={selectedGNNMap} onChange={handleGNNMapChange}>
+              <option value="Sioux">Sioux Falls</option>
+              <option value="ANAHEIM">Anaheim</option>
             </select>
           </div>
           <label className="block mb-2 font-bold font-figtree">Select Earthquake Type</label>
-          <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree">
+          <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={selectedEarthquakeType} onChange={handleEarthquakeTypeChange}>
             <option value="major">Major Earthquake</option>
             <option value="moderate">Moderate Earthquake</option>
             <option value="minor">Minor Earthquake</option>
           </select>
-          <button className="mt-4 px-4 py-2 bg-green-500 text-white rounded font-figtree w-full">Run Scenarios</button>
+          <button onClick={runGNNRatioScenarios} className="mt-4 px-4 py-2 border bg-green-500 text-white border-gray-300 rounded font-figtree w-full">
+            Run Ratio Scenarios
+          </button>
+
+          <button onClick={runGNNFlowScenarios} className="mt-4 px-4 py-2 border bg-orange-500 text-white border-gray-300 rounded font-figtree w-full">
+            Run Flow Scenarios
+          </button>
         </div>
       )}
 
       <button onClick={handleReset} className="mt-4 px-4 py-2 border border-gray-300 rounded font-figtree w-full">
         Reset
       </button>
+
       <button className="mt-4 px-4 py-2 border bg-yellow-500 text-white border-gray-300 rounded font-figtree w-full">
         <Link to="/">Go to Bridges Map</Link>
       </button>

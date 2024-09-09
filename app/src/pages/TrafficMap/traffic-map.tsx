@@ -4,11 +4,12 @@ import { TrafficSidebar } from "../../components/Sidebar/TrafficMapSidebar/traff
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "leaflet-arrowheads";
-import { MatrixData, TrafficData } from "./traffic-map";
+import { MatrixData, TrafficData, TrafficEarthquakeData } from "./traffic-map";
 import MapOperations from "../../hooks/mapoperations.tsx";
 
 // Legends
 import DemandLegend from "../../components/Legend/demand-legend.tsx";
+
 import SiouxFallsLegendRatio from "../../components/Legend/siouxfalls_legends/siouxfalls-legend-ratio";
 import SiouxFallsLegendFlow from "../../components/Legend/siouxfalls_legends/siouxfalls-legend-flow";
 import SiouxFallsLegendCapacity from "../../components/Legend/siouxfalls_legends/siouxfalls-legend-capacity";
@@ -33,6 +34,13 @@ export const TrafficMap = () => {
 
   const [mapCenter, setMapCenter] = useState<[number, number]>([43.546, -96.7313]);
   const [mapZoom, setMapZoom] = useState<number>(12);
+
+  // Neural Network Scenarios
+  const [selectedGNNMap, setSelectedGNNMap] = useState<string>("Sioux");
+  const [selectedEarthquakeType, setSelectedEarthquakeType] = useState<string>("major");
+  const [GNNFlowScenarios, setGNNFlowScenarios] = useState<boolean>(false);
+  const [GNNRatioScenarios, setGNNRatioScenarios] = useState<boolean>(false);
+  const [trafficEarthquakeData, setTrafficEarthquakeData] = useState<TrafficEarthquakeData | null>(null);
 
   useEffect(() => {
     if (selectedNodeId) {
@@ -62,6 +70,20 @@ export const TrafficMap = () => {
         });
     }
   }, [selectedMap, flowScenarios, capacityScenarios, ratioScenarios]);
+
+  useEffect(() => {
+    if (GNNFlowScenarios || GNNRatioScenarios) {
+      fetch(`http://localhost:5000/data/traffic-earthquake/${selectedEarthquakeType}/${selectedGNNMap}`)
+        .then((response) => response.json())
+        .then((data: TrafficEarthquakeData) => {
+          setTrafficEarthquakeData(data);
+        })
+        .catch((error) => {
+          console.error("Error fetching data:", error);
+          setError("Failed to load data. Please try again later.");
+        });
+    }
+  }, [selectedGNNMap, GNNFlowScenarios, GNNRatioScenarios]);
 
   const handleReset = () => {
     setError("");
@@ -94,6 +116,16 @@ export const TrafficMap = () => {
     setCapacityScenarios(true);
     setRatioScenarios(false);
     setFlowScenarios(false);
+  };
+
+  const runGNNFlowScenarios = () => {
+    setGNNFlowScenarios(true);
+    setGNNRatioScenarios(false);
+  };
+
+  const runGNNRatioScenarios = () => {
+    setGNNFlowScenarios(false);
+    setGNNRatioScenarios(true);
   };
 
   const ArrowedPolyline = ({ positions }: { positions: [number, number][][] }) => {
@@ -442,6 +474,90 @@ export const TrafficMap = () => {
                 })}
             </>
           )}
+          {trafficEarthquakeData && GNNFlowScenarios && (
+            <>
+              {trafficEarthquakeData &&
+                trafficEarthquakeData.map_nodes.ids.map((id: number, index: number) => {
+                  return (
+                    <CircleMarker key={id} center={[trafficEarthquakeData.map_nodes.lats[index], trafficEarthquakeData.map_nodes.lons[index]]} radius={4} color="green" fillOpacity={1} pane="nodes">
+                      <Popup>
+                        Node ID: {id}
+                        <br />
+                        Latitude: {trafficEarthquakeData.map_nodes.lats[index]}
+                        <br />
+                        Longitude: {trafficEarthquakeData.map_nodes.lons[index]}
+                      </Popup>
+                      ;
+                    </CircleMarker>
+                  );
+                })}
+              {trafficEarthquakeData &&
+                Object.entries(trafficEarthquakeData.flow).map(([key, flow], index) => {
+                  const [startId, endId] = parseKey(key);
+                  if (startId === null || endId === null) {
+                    return;
+                  }
+
+                  const startIndex = trafficEarthquakeData.map_nodes.ids.indexOf(startId);
+                  const endIndex = trafficEarthquakeData.map_nodes.ids.indexOf(endId);
+
+                  const positions: [number, number][] = [
+                    [trafficEarthquakeData.map_nodes.lats[startIndex], trafficEarthquakeData.map_nodes.lons[startIndex]],
+                    [trafficEarthquakeData.map_nodes.lats[endIndex], trafficEarthquakeData.map_nodes.lons[endIndex]],
+                  ] as [number, number][];
+
+                  return (
+                    <Polyline key={key} positions={positions} color={selectedGNNMap === "Sioux" ? colorFlowSiouxFalls(flow) : selectedGNNMap === "ANAHEIM" ? colorFlowAnaheim(flow) : selectedGNNMap === "EMA" ? colorFlowEMA(flow) : "blue"}>
+                      <Popup>Flow: {trafficEarthquakeData.flow_probabilities[index][0].toFixed(2)}</Popup>
+                    </Polyline>
+                  );
+                })}
+            </>
+          )}
+          {trafficEarthquakeData && GNNRatioScenarios && (
+            <>
+              {trafficEarthquakeData &&
+                trafficEarthquakeData.map_nodes.ids.map((id: number, index: number) => {
+                  return (
+                    <CircleMarker key={id} center={[trafficEarthquakeData.map_nodes.lats[index], trafficEarthquakeData.map_nodes.lons[index]]} radius={4} color="green" fillOpacity={1} pane="nodes">
+                      <Popup>
+                        Node ID: {id}
+                        <br />
+                        Latitude: {trafficEarthquakeData.map_nodes.lats[index]}
+                        <br />
+                        Longitude: {trafficEarthquakeData.map_nodes.lons[index]}
+                      </Popup>
+                      ;
+                    </CircleMarker>
+                  );
+                })}
+              {trafficEarthquakeData &&
+                Object.entries(trafficEarthquakeData.ratio).map(([key, ratio], index) => {
+                  const [startId, endId] = parseKey(key);
+                  if (startId === null || endId === null) {
+                    return;
+                  }
+
+                  const startIndex = trafficEarthquakeData.map_nodes.ids.indexOf(startId);
+                  const endIndex = trafficEarthquakeData.map_nodes.ids.indexOf(endId);
+
+                  const positions: [number, number][] = [
+                    [trafficEarthquakeData.map_nodes.lats[startIndex], trafficEarthquakeData.map_nodes.lons[startIndex]],
+                    [trafficEarthquakeData.map_nodes.lats[endIndex], trafficEarthquakeData.map_nodes.lons[endIndex]],
+                  ] as [number, number][];
+
+                  return (
+                    <Polyline
+                      key={key}
+                      positions={positions}
+                      color={selectedGNNMap === "Sioux" ? colorRatioSiouxFalls(ratio) : selectedGNNMap === "ANAHEIM" ? colorRatioAnaheim(ratio) : selectedGNNMap === "EMA" ? colorRatioEMA(ratio) : "blue"}
+                    >
+                      <Popup>Ratio: {trafficEarthquakeData.ratio_probabilities[index][0].toFixed(2)}</Popup>
+                    </Polyline>
+                  );
+                })}
+            </>
+          )}
           {selectedNodeId && <DemandLegend />}
           {selectedMap === "sta_siouxfalls" && ratioScenarios && <SiouxFallsLegendRatio />}
           {selectedMap === "sta_siouxfalls" && flowScenarios && <SiouxFallsLegendFlow />}
@@ -463,6 +579,10 @@ export const TrafficMap = () => {
         runCapacityScenarios={runCapacityScenarios}
         setMapCenter={setMapCenter}
         setMapZoom={setMapZoom}
+        setGNNMap={setSelectedGNNMap}
+        setEarthquakeType={setSelectedEarthquakeType}
+        runGNNFlowScenarios={runGNNFlowScenarios}
+        runGNNRatioScenarios={runGNNRatioScenarios}
       />
     </div>
   );

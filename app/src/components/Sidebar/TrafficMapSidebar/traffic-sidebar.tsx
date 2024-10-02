@@ -15,7 +15,6 @@ export const TrafficSidebar = ({ reset, setMap, addNodeId, runRatioScenarios, ru
     reset();
     setError("");
     setNodeId("");
-    setSelectedEarthquakeType("");
   };
 
   const handleMapChange = (event: React.ChangeEvent<HTMLSelectElement>) => {

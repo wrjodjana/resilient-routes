@@ -39,7 +39,7 @@ export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridge
     }
 
     try {
-      const response = await axios.get(`http://localhost:5000/data/nodes/${selectedMap}?node1=${startPlace}&node2=${endPlace}`);
+      const response = await axios.get(`http://3.19.74.180/data/nodes/${selectedMap}?node1=${startPlace}&node2=${endPlace}`);
       if (response.data.error) {
         setError(response.data.error);
         setSelectedNodeData(null);

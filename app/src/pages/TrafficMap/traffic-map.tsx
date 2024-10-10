@@ -44,7 +44,7 @@ export const TrafficMap = () => {
 
   useEffect(() => {
     if (selectedNodeId) {
-      fetch(`http://localhost:5000/data/matrix/${selectedMap}`)
+      fetch(`http://3.19.74.180/data/matrix/${selectedMap}`)
         .then((response) => response.json())
         .then((data: MatrixData) => {
           setMatrixData(data);
@@ -58,7 +58,7 @@ export const TrafficMap = () => {
 
   useEffect(() => {
     if (flowScenarios || capacityScenarios || ratioScenarios) {
-      fetch(`http://localhost:5000/data/traffic/${selectedMap}`)
+      fetch(`http://3.19.74.180/data/traffic/${selectedMap}`)
         .then((response) => response.json())
         .then((data: TrafficData) => {
           setTrafficData(data);
@@ -73,7 +73,7 @@ export const TrafficMap = () => {
 
   useEffect(() => {
     if (GNNFlowScenarios || GNNRatioScenarios) {
-      fetch(`http://localhost:5000/data/traffic-earthquake/${selectedEarthquakeType}/${selectedGNNMap}`)
+      fetch(`http://3.19.74.180/data/traffic-earthquake/${selectedEarthquakeType}/${selectedGNNMap}`)
         .then((response) => response.json())
         .then((data: TrafficEarthquakeData) => {
           setTrafficEarthquakeData(data);

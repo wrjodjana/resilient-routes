@@ -313,4 +313,4 @@ def get_traffic_earthquake(earthquake_type, dataset):
     return jsonify(data)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(ssl_context='adhoc', debug=True)

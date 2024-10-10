@@ -24,7 +24,7 @@ export const BaseMap = () => {
 
   useEffect(() => {
     if (runAllScenarios || selectedNodeData) {
-      fetch(`https://3.19.74.180/data/${selectedMap}`)
+      fetch(`http://3.19.74.180/data/${selectedMap}`)
         .then((response) => response.json())
         .then((data: Data) => {
           setData(data);
@@ -38,7 +38,7 @@ export const BaseMap = () => {
 
   useEffect(() => {
     if (runBridgeScenario) {
-      fetch(`https://3.19.74.180/data/bridges/${selectedMap}`)
+      fetch(`http://3.19.74.180/data/bridges/${selectedMap}`)
         .then((response) => response.json())
         .then((data: BridgeData) => {
           setBridgeData(data);
@@ -52,7 +52,7 @@ export const BaseMap = () => {
 
   useEffect(() => {
     if (runEarthquakeScenario) {
-      fetch(`https://3.19.74.180/data/earthquake/${selectedEarthquakeType}/${selectedTargetNode}/${selectedGNNMap}`)
+      fetch(`http://3.19.74.180/data/earthquake/${selectedEarthquakeType}/${selectedTargetNode}/${selectedGNNMap}`)
         .then((response) => response.json())
         .then((data: EarthquakeData) => {
           setEarthquakeData(data);

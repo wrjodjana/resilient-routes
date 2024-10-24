@@ -39,7 +39,7 @@ export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridge
     }
 
     try {
-      const response = await axios.get(`https://3.19.74.180/data/nodes/${selectedMap}?node1=${startPlace}&node2=${endPlace}`);
+      const response = await axios.get(`http://localhost:5000/data/nodes/${selectedMap}?node1=${startPlace}&node2=${endPlace}`);
       if (response.data.error) {
         setError(response.data.error);
         setSelectedNodeData(null);
@@ -99,7 +99,7 @@ export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridge
     setTargetNode(newTargetNode);
   };
   return (
-    <div className="w-1/4 p-4 shadow bg-lightBlue">
+    <div className="w-1/4 p-4 shadow bg-white">
       <h2 className="text-xl font-bold mb-4 text-cyan mt-3">Bridge and Nodes Visualization</h2>
 
       <div className="mb-4">
@@ -175,7 +175,7 @@ export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridge
         </>
       )}
 
-      <button onClick={handleReset} className="mt-4 px-4 py-2 border border-gray-300 rounded font-figtree w-full">
+      <button onClick={handleReset} className="mt-4 px-4 py-2 border border-gray-500 bg-gray-300 rounded font-figtree w-full">
         Reset
       </button>
 

@@ -110,7 +110,7 @@ export const TrafficSidebar = ({ reset, setMap, addNodeId, runRatioScenarios, ru
   };
 
   return (
-    <div className="w-1/4 p-4 shadow bg-lightBlue">
+    <div className="w-1/4 p-4 shadow bg-white">
       <h2 className="text-xl font-bold mb-4 text-cyan mt-3">Traffic Visualization</h2>
 
       <div className="mb-4">
@@ -173,7 +173,7 @@ export const TrafficSidebar = ({ reset, setMap, addNodeId, runRatioScenarios, ru
         </div>
       )}
 
-      <button onClick={handleReset} className="mt-4 px-4 py-2 border border-gray-300 rounded font-figtree w-full">
+      <button onClick={handleReset} className="mt-4 px-4 py-2 border border-gray-500 bg-gray-300 rounded font-figtree w-full">
         Reset
       </button>
 

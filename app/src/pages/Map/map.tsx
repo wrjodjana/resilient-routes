@@ -8,6 +8,8 @@ import SelectLegend from "../../components/Legend/select-legend.tsx";
 import EarthquakeLegend from "../../components/Legend/earthquake-legend.tsx";
 import { MapNode, Data, NodeData, BridgeInfo, BridgeData, EarthquakeData } from "./map";
 
+import { API_URL } from "../../config.ts";
+
 export const BaseMap = () => {
   const [selectedNodeData, setSelectedNodeData] = useState<NodeData | null>(null);
   const [data, setData] = useState<Data | null>(null);
@@ -24,7 +26,7 @@ export const BaseMap = () => {
 
   useEffect(() => {
     if (runAllScenarios || selectedNodeData) {
-      fetch(`http://localhost:5000/data/${selectedMap}`)
+      fetch(`${API_URL}/data/${selectedMap}`)
         .then((response) => response.json())
         .then((data: Data) => {
           setData(data);
@@ -38,7 +40,7 @@ export const BaseMap = () => {
 
   useEffect(() => {
     if (runBridgeScenario) {
-      fetch(`http://localhost:5000/data/bridges/${selectedMap}`)
+      fetch(`${API_URL}/data/bridges/${selectedMap}`)
         .then((response) => response.json())
         .then((data: BridgeData) => {
           setBridgeData(data);
@@ -52,7 +54,7 @@ export const BaseMap = () => {
 
   useEffect(() => {
     if (runEarthquakeScenario) {
-      fetch(`http://localhost:5000/data/earthquake/${selectedEarthquakeType}/${selectedTargetNode}/${selectedGNNMap}`)
+      fetch(`${API_URL}/data/earthquake/${selectedEarthquakeType}/${selectedTargetNode}/${selectedGNNMap}`)
         .then((response) => response.json())
         .then((data: EarthquakeData) => {
           setEarthquakeData(data);

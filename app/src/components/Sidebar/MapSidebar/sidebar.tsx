@@ -3,6 +3,8 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { SidebarProps } from "./sidebar";
 
+import { API_URL } from "../../../config.ts";
+
 export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenario, setMap, runEarthquakeScenario, setGNNMap, setEarthquakeType, setTargetNode }: SidebarProps) => {
   const [startPlace, setStartPlace] = useState<string>("");
   const [endPlace, setEndPlace] = useState<string>("");
@@ -39,7 +41,7 @@ export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridge
     }
 
     try {
-      const response = await axios.get(`http://localhost:5000/data/nodes/${selectedMap}?node1=${startPlace}&node2=${endPlace}`);
+      const response = await axios.get(`${API_URL}/data/nodes/${selectedMap}?node1=${startPlace}&node2=${endPlace}`);
       if (response.data.error) {
         setError(response.data.error);
         setSelectedNodeData(null);

@@ -311,3 +311,6 @@ def get_traffic_earthquake(earthquake_type, dataset):
         "flow_probabilities": flow_probabilities
     }
     return jsonify(data)
+
+if __name__ == '__main__':
+    app.run(debug=True)

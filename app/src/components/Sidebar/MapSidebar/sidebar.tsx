@@ -1,14 +1,43 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import { SidebarProps } from "./sidebar";
 
 import { API_URL } from "../../../config.ts";
 
-export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridgeScenario, setMap, runEarthquakeScenario, setGNNMap, setEarthquakeType, setTargetNode }: SidebarProps) => {
+export interface BoundingBox {
+  northEast: { lat: number; lng: number };
+  southWest: { lat: number; lng: number };
+}
+
+interface NetworkNode {
+  id: number;
+  lat: number;
+  lon: number;
+  tags?: {
+    [key: string]: string;
+  };
+}
+
+interface SidebarProps {
+  boundingBox: BoundingBox | null;
+  setBoundingBox: (box: BoundingBox | null) => void;
+  setNetworkNodes: (nodes: NetworkNode[]) => void;
+  setSelectedNodeData: (data: any) => void;
+  runAllScenarios: () => void;
+  reset: () => void;
+  runBridgeScenario: () => void;
+  setMap: (map: string) => void;
+  runEarthquakeScenario: () => void;
+  setGNNMap: (map: string) => void;
+  setEarthquakeType: (type: string) => void;
+  setTargetNode: (node: string) => void;
+}
+
+export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setSelectedNodeData, runAllScenarios, reset, runBridgeScenario, setMap, runEarthquakeScenario, setGNNMap, setEarthquakeType, setTargetNode }: SidebarProps) => {
   // const [startPlace, setStartPlace] = useState<string>("");
   // const [endPlace, setEndPlace] = useState<string>("");
-  // const [error, setError] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
   // const [selectedMap, setSelectedMap] = useState<string>("connectivity_graph_small");
   // const [currentSection, setCurrentSection] = useState<string>("preInputted");
 
@@ -16,6 +45,104 @@ export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridge
   // const [selectedGNNMap, setSelectedGNNMap] = useState<string>("connectivity_gnn_small");
   // const [selectedTargetNode, setSelectedTargetNode] = useState<string>("");
   // const [selectedEarthquakeType, setSelectedEarthquakeType] = useState<string>("major");
+
+  const [minLat, setMinLat] = useState<number | "">("");
+  const [maxLat, setMaxLat] = useState<number | "">("");
+  const [minLng, setMinLng] = useState<number | "">("");
+  const [maxLng, setMaxLng] = useState<number | "">("");
+
+  const validateCoordinates = (): boolean => {
+    // Check if all fields are filled
+    if (!minLat || !maxLat || !minLng || !maxLng) {
+      setError("All coordinates are required");
+      return false;
+    }
+
+    // Check latitude range (-90 to 90)
+    if (minLat < -90 || minLat > 90 || maxLat < -90 || maxLat > 90) {
+      setError("Latitude must be between -90 and 90 degrees");
+      return false;
+    }
+
+    // Check longitude range (-180 to 180)
+    if (minLng < -180 || minLng > 180 || maxLng < -180 || maxLng > 180) {
+      setError("Longitude must be between -180 and 180 degrees");
+      return false;
+    }
+
+    // Check if min is less than max
+    if (minLat > maxLat) {
+      setError("Minimum latitude cannot be greater than maximum latitude");
+      return false;
+    }
+
+    if (minLng > maxLng) {
+      setError("Minimum longitude cannot be greater than maximum longitude");
+      return false;
+    }
+
+    // Clear any previous errors if validation passes
+    setError(null);
+    return true;
+  };
+
+  const handleFetchNetwork = async () => {
+    if (!validateCoordinates()) {
+      return;
+    }
+
+    // Query for motorway nodes (highways/freeways)
+    const query = `
+      [out:json][timeout:25];
+      (
+        node["highway"="motorway"]
+          (${minLat},${minLng},${maxLat},${maxLng});
+        node["highway"="motorway_junction"]
+          (${minLat},${minLng},${maxLat},${maxLng});
+        node["highway"="motorway_link"]
+          (${minLat},${minLng},${maxLat},${maxLng});
+      );
+      out body;
+    `;
+
+    try {
+      const response = await axios.get("https://overpass-api.de/api/interpreter", {
+        params: { data: query },
+      });
+      setBoundingBox({
+        southWest: { lat: Number(minLat), lng: Number(minLng) },
+        northEast: { lat: Number(maxLat), lng: Number(maxLng) },
+      });
+
+      // Set network nodes
+      if (response.data && response.data.elements) {
+        setNetworkNodes(response.data.elements);
+      }
+    } catch (error) {
+      console.error("Failed to fetch network data:", error);
+    }
+  };
+
+  const handleReset = () => {
+    // Clear input fields
+    setMinLat("");
+    setMaxLat("");
+    setMinLng("");
+    setMaxLng("");
+
+    // Clear map data
+    setNetworkNodes([]);
+    setBoundingBox(null);
+  };
+
+  useEffect(() => {
+    if (boundingBox) {
+      setMinLat(boundingBox.southWest.lat);
+      setMaxLat(boundingBox.northEast.lat);
+      setMinLng(boundingBox.southWest.lng);
+      setMaxLng(boundingBox.northEast.lng);
+    }
+  }, [boundingBox]);
 
   // const handleRunScenario = async (event: { preventDefault: () => void }) => {
   //   event.preventDefault();
@@ -56,13 +183,6 @@ export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridge
   //   }
   // };
 
-  // const handleReset = () => {
-  //   reset();
-  //   setError("");
-  //   setStartPlace("");
-  //   setEndPlace("");
-  //   // setSelectedTargetNode("");
-  // };
   // const handleMapChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
   //   const mapName = event.target.value;
   //   setSelectedMap(mapName);
@@ -115,24 +235,33 @@ export const Sidebar = ({ setSelectedNodeData, runAllScenarios, reset, runBridge
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block mb-1 font-bold font-figtree">Min Latitude</label>
-            <input type="number" className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" />
+            <input type="number" value={minLat} onChange={(e) => setMinLat(e.target.value ? Number(e.target.value) : "")} className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" />
           </div>
           <div>
             <label className="block mb-1 font-bold font-figtree">Max Latitude</label>
-            <input type="number" className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" />
+            <input type="number" value={maxLat} onChange={(e) => setMaxLat(e.target.value ? Number(e.target.value) : "")} className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" />
           </div>
           <div>
             <label className="block mb-1 font-bold font-figtree">Min Longitude</label>
-            <input type="number" className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" />
+            <input type="number" value={minLng} onChange={(e) => setMinLng(e.target.value ? Number(e.target.value) : "")} className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" />
           </div>
           <div>
             <label className="block mb-1 font-bold font-figtree">Max Longitude</label>
-            <input type="number" className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" />
+            <input type="number" value={maxLng} onChange={(e) => setMaxLng(e.target.value ? Number(e.target.value) : "")} className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" />
           </div>
         </div>
-        <div className="mt-8">
-          <button className="w-48 py-3 bg-[#4B7BF5] text-white text-lg font-medium rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-blue-300 disabled:cursor-not-allowed">
+        {error && <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">{error}</div>}
+        <div className="mt-8 flex flex-col gap-4">
+          <button
+            onClick={handleFetchNetwork}
+            disabled={!minLat || !maxLat || !minLng || !maxLng}
+            className="w-full py-3 bg-[#4B7BF5] text-white text-lg font-medium rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-blue-300 disabled:cursor-not-allowed"
+          >
             Fetch Network
+          </button>
+
+          <button onClick={handleReset} className="w-full py-3 bg-gray-500 text-white text-lg font-medium rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+            Reset
           </button>
         </div>
       </div>

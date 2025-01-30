@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Popup, Polyline, CircleMarker } from "react-leaflet";
-import { Sidebar } from "../../components/Sidebar/MapSidebar/sidebar.tsx";
+import { MapContainer, TileLayer, Popup, Polyline, CircleMarker, Rectangle, useMap } from "react-leaflet";
+import { Sidebar, BoundingBox } from "../../components/Sidebar/MapSidebar/sidebar.tsx";
 import "leaflet/dist/leaflet.css";
 import AllLegend from "../../components/Legend/all-legend.tsx";
 import BridgeLegend from "../../components/Legend/bridge-legend.tsx";
@@ -9,6 +9,103 @@ import EarthquakeLegend from "../../components/Legend/earthquake-legend.tsx";
 import { MapNode, Data, NodeData, BridgeInfo, BridgeData, EarthquakeData } from "./map";
 
 import { API_URL } from "../../config.ts";
+import "leaflet-draw/dist/leaflet.draw.css";
+import * as L from "leaflet";
+import "leaflet-draw";
+
+interface NetworkNode {
+  id: number;
+  lat: number;
+  lon: number;
+  tags?: {
+    [key: string]: string;
+  };
+}
+
+// Create a new component for handling map bounds
+const BoundsUpdater = ({ boundingBox }: { boundingBox: BoundingBox | null }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (boundingBox) {
+      const bounds = [
+        [boundingBox.southWest.lat, boundingBox.southWest.lng],
+        [boundingBox.northEast.lat, boundingBox.northEast.lng],
+      ] as L.LatLngBoundsLiteral;
+      map.fitBounds(bounds);
+    }
+  }, [boundingBox, map]);
+
+  return null;
+};
+
+// Create a component for the draw control
+const DrawControl = ({ setBoundingBox }: { setBoundingBox: (box: BoundingBox | null) => void }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    // Create a FeatureGroup to store editable layers
+    const drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+
+    // Specify draw control options
+    const drawControl = new L.Control.Draw({
+      draw: {
+        // Disable all shapes except rectangle
+        polyline: false,
+        polygon: false,
+        circle: false,
+        circlemarker: false,
+        marker: false,
+        rectangle: {
+          shapeOptions: {
+            color: "black",
+            weight: 1,
+            fillOpacity: 0,
+          },
+        },
+      },
+      edit: {
+        featureGroup: drawnItems,
+        remove: true,
+      },
+    });
+
+    map.addControl(drawControl);
+
+    // Handle the draw:created event
+    map.on(L.Draw.Event.CREATED, (e: any) => {
+      const layer = e.layer;
+      drawnItems.addLayer(layer);
+
+      // Get bounds of the drawn rectangle
+      const bounds = layer.getBounds();
+      setBoundingBox({
+        southWest: {
+          lat: bounds.getSouth(),
+          lng: bounds.getWest(),
+        },
+        northEast: {
+          lat: bounds.getNorth(),
+          lng: bounds.getEast(),
+        },
+      });
+    });
+
+    // Handle deletion
+    map.on(L.Draw.Event.DELETED, () => {
+      setBoundingBox(null);
+    });
+
+    // Cleanup
+    return () => {
+      map.removeControl(drawControl);
+      map.removeLayer(drawnItems);
+    };
+  }, [map, setBoundingBox]);
+
+  return null;
+};
 
 export const BaseMap = () => {
   const [selectedNodeData, setSelectedNodeData] = useState<NodeData | null>(null);
@@ -23,6 +120,8 @@ export const BaseMap = () => {
   const [selectedGNNMap, setSelectedGNNMap] = useState<string>("connectivity_gnn_small");
   const [selectedEarthquakeType, setSelectedEarthquakeType] = useState<string>("major");
   const [selectedTargetNode, setSelectedTargetNode] = useState<number>(0);
+  const [boundingBox, setBoundingBox] = useState<BoundingBox | null>(null);
+  const [networkNodes, setNetworkNodes] = useState<NetworkNode[]>([]);
 
   useEffect(() => {
     if (runAllScenarios || selectedNodeData) {
@@ -66,6 +165,12 @@ export const BaseMap = () => {
         });
     }
   }, [selectedGNNMap, selectedEarthquakeType, selectedTargetNode, runEarthquakeScenario]);
+
+  useEffect(() => {
+    if (boundingBox) {
+      console.log("Bounding box updated:", boundingBox);
+    }
+  }, [boundingBox]);
 
   const handleRunAllScenarios = () => {
     setRunAllScenarios(true);
@@ -113,6 +218,10 @@ export const BaseMap = () => {
       <div className="w-5/6 h-full">
         <MapContainer center={[37.3387, -121.8853]} zoom={12} className="h-full">
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+
+          <DrawControl setBoundingBox={setBoundingBox} />
+          <BoundsUpdater boundingBox={boundingBox} />
+
           {selectedNodeData && selectedNodeData.path && data && <Polyline positions={selectedNodeData.path.map((index) => [data.map_nodes.lats[index], data.map_nodes.lons[index]])} color="black" />}
           {selectedNodeData && (
             <>
@@ -221,13 +330,37 @@ export const BaseMap = () => {
               ))}
             </>
           )}
-
-          {runAllScenarios && <AllLegend />}
-          {runEarthquakeScenario && <EarthquakeLegend />}
-          {runBridgeScenario && <BridgeLegend />}
+          {boundingBox && (
+            <Rectangle
+              bounds={[
+                [boundingBox.southWest.lat, boundingBox.southWest.lng],
+                [boundingBox.northEast.lat, boundingBox.northEast.lng],
+              ]}
+              pathOptions={{
+                color: "black",
+                weight: 1,
+                fillColor: "transparent",
+                fillOpacity: 0,
+              }}
+            />
+          )}
+          {networkNodes.map((node) => (
+            <CircleMarker key={node.id} center={[node.lat, node.lon]} radius={3} color="#1E40AF" fillOpacity={1}>
+              <Popup>
+                Node ID: {node.id}
+                <br />
+                Latitude: {node.lat.toFixed(4)}
+                <br />
+                Longitude: {node.lon.toFixed(4)}
+              </Popup>
+            </CircleMarker>
+          ))}
         </MapContainer>
       </div>
       <Sidebar
+        boundingBox={boundingBox}
+        setBoundingBox={setBoundingBox}
+        setNetworkNodes={setNetworkNodes}
         setSelectedNodeData={setSelectedNodeData}
         runAllScenarios={handleRunAllScenarios}
         reset={handleReset}

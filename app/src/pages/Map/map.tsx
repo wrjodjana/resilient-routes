@@ -22,6 +22,15 @@ interface NetworkNode {
   };
 }
 
+interface NetworkWay {
+  type: "way";
+  id: number;
+  nodes: number[];
+  tags?: {
+    [key: string]: string;
+  };
+}
+
 // Create a new component for handling map bounds
 const BoundsUpdater = ({ boundingBox }: { boundingBox: BoundingBox | null }) => {
   const map = useMap();
@@ -122,6 +131,7 @@ export const BaseMap = () => {
   const [selectedTargetNode, setSelectedTargetNode] = useState<number>(0);
   const [boundingBox, setBoundingBox] = useState<BoundingBox | null>(null);
   const [networkNodes, setNetworkNodes] = useState<NetworkNode[]>([]);
+  const [networkWays, setNetworkWays] = useState<NetworkWay[]>([]);
 
   useEffect(() => {
     if (runAllScenarios || selectedNodeData) {
@@ -344,8 +354,32 @@ export const BaseMap = () => {
               }}
             />
           )}
+          {networkWays.map((way) => {
+            const wayPoints = way.nodes
+              .map((nodeId) => {
+                const node = networkNodes.find((n) => n.id === nodeId);
+                return node ? [node.lat, node.lon] : null;
+              })
+              .filter((point) => point !== null);
+
+            return (
+              <Polyline key={way.id} positions={wayPoints as [number, number][]} color="#FF4B4B" weight={3} opacity={0.8}>
+                <Popup>
+                  Way ID: {way.id}
+                  <br />
+                  Type: {way.tags?.highway}
+                  <br />
+                  Name: {way.tags?.name || "Unnamed"}
+                  <br />
+                  Lanes: {way.tags?.lanes || "Unknown"}
+                  <br />
+                  Speed Limit: {way.tags?.maxspeed || "Unknown"}
+                </Popup>
+              </Polyline>
+            );
+          })}
           {networkNodes.map((node) => (
-            <CircleMarker key={node.id} center={[node.lat, node.lon]} radius={3} color="#1E40AF" fillOpacity={1}>
+            <CircleMarker key={node.id} center={[node.lat, node.lon]} radius={1} color="#1E40AF" fillOpacity={1}>
               <Popup>
                 Node ID: {node.id}
                 <br />
@@ -361,6 +395,7 @@ export const BaseMap = () => {
         boundingBox={boundingBox}
         setBoundingBox={setBoundingBox}
         setNetworkNodes={setNetworkNodes}
+        setNetworkWays={setNetworkWays}
         setSelectedNodeData={setSelectedNodeData}
         runAllScenarios={handleRunAllScenarios}
         reset={handleReset}

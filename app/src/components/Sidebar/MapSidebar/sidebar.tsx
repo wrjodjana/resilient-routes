@@ -19,10 +19,20 @@ interface NetworkNode {
   };
 }
 
+interface NetworkWay {
+  type: "way";
+  id: number;
+  nodes: number[];
+  tags?: {
+    [key: string]: string;
+  };
+}
+
 interface SidebarProps {
   boundingBox: BoundingBox | null;
   setBoundingBox: (box: BoundingBox | null) => void;
   setNetworkNodes: (nodes: NetworkNode[]) => void;
+  setNetworkWays: (ways: NetworkWay[]) => void;
   setSelectedNodeData: (data: any) => void;
   runAllScenarios: () => void;
   reset: () => void;
@@ -34,7 +44,21 @@ interface SidebarProps {
   setTargetNode: (node: string) => void;
 }
 
-export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setSelectedNodeData, runAllScenarios, reset, runBridgeScenario, setMap, runEarthquakeScenario, setGNNMap, setEarthquakeType, setTargetNode }: SidebarProps) => {
+export const Sidebar = ({
+  boundingBox,
+  setBoundingBox,
+  setNetworkNodes,
+  setNetworkWays,
+  setSelectedNodeData,
+  runAllScenarios,
+  reset,
+  runBridgeScenario,
+  setMap,
+  runEarthquakeScenario,
+  setGNNMap,
+  setEarthquakeType,
+  setTargetNode,
+}: SidebarProps) => {
   // const [startPlace, setStartPlace] = useState<string>("");
   // const [endPlace, setEndPlace] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -52,25 +76,21 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setSelec
   const [maxLng, setMaxLng] = useState<number | "">("");
 
   const validateCoordinates = (): boolean => {
-    // Check if all fields are filled
     if (!minLat || !maxLat || !minLng || !maxLng) {
       setError("All coordinates are required");
       return false;
     }
 
-    // Check latitude range (-90 to 90)
     if (minLat < -90 || minLat > 90 || maxLat < -90 || maxLat > 90) {
       setError("Latitude must be between -90 and 90 degrees");
       return false;
     }
 
-    // Check longitude range (-180 to 180)
     if (minLng < -180 || minLng > 180 || maxLng < -180 || maxLng > 180) {
       setError("Longitude must be between -180 and 180 degrees");
       return false;
     }
 
-    // Check if min is less than max
     if (minLat > maxLat) {
       setError("Minimum latitude cannot be greater than maximum latitude");
       return false;
@@ -81,7 +101,6 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setSelec
       return false;
     }
 
-    // Clear any previous errors if validation passes
     setError(null);
     return true;
   };
@@ -91,32 +110,34 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setSelec
       return;
     }
 
-    // Query for motorway nodes (highways/freeways)
     const query = `
       [out:json][timeout:25];
       (
-        node["highway"="motorway"]
-          (${minLat},${minLng},${maxLat},${maxLng});
-        node["highway"="motorway_junction"]
-          (${minLat},${minLng},${maxLat},${maxLng});
-        node["highway"="motorway_link"]
+        // Just the main motorway
+        way["highway"="motorway"]
           (${minLat},${minLng},${maxLat},${maxLng});
       );
       out body;
+      >;
+      out skel qt;
     `;
 
     try {
       const response = await axios.get("https://overpass-api.de/api/interpreter", {
         params: { data: query },
       });
+
       setBoundingBox({
         southWest: { lat: Number(minLat), lng: Number(minLng) },
         northEast: { lat: Number(maxLat), lng: Number(maxLng) },
       });
 
-      // Set network nodes
       if (response.data && response.data.elements) {
-        setNetworkNodes(response.data.elements);
+        const nodes = response.data.elements.filter((elem) => elem.type === "node");
+        const ways = response.data.elements.filter((elem) => elem.type === "way");
+
+        setNetworkNodes(nodes);
+        setNetworkWays(ways);
       }
     } catch (error) {
       console.error("Failed to fetch network data:", error);
@@ -124,14 +145,13 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setSelec
   };
 
   const handleReset = () => {
-    // Clear input fields
     setMinLat("");
     setMaxLat("");
     setMinLng("");
     setMaxLng("");
 
-    // Clear map data
     setNetworkNodes([]);
+    setNetworkWays([]);
     setBoundingBox(null);
   };
 

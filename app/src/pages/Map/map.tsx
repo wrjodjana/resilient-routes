@@ -57,6 +57,9 @@ const DrawControl = ({ setBoundingBox }: { setBoundingBox: (box: BoundingBox | n
     const drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
 
+    // Store the feature group in the map instance so we can access it later
+    map.drawnItems = drawnItems;
+
     // Specify draw control options
     const drawControl = new L.Control.Draw({
       draw: {
@@ -132,6 +135,7 @@ export const BaseMap = () => {
   const [boundingBox, setBoundingBox] = useState<BoundingBox | null>(null);
   const [networkNodes, setNetworkNodes] = useState<NetworkNode[]>([]);
   const [networkWays, setNetworkWays] = useState<NetworkWay[]>([]);
+  const [visualizationFilter, setVisualizationFilter] = useState<"all" | "nodes" | "links">("all");
 
   useEffect(() => {
     if (runAllScenarios || selectedNodeData) {
@@ -355,6 +359,8 @@ export const BaseMap = () => {
             />
           )}
           {networkWays.map((way) => {
+            if (visualizationFilter === "nodes") return null;
+
             const wayPoints = way.nodes
               .map((nodeId) => {
                 const node = networkNodes.find((n) => n.id === nodeId);
@@ -370,25 +376,25 @@ export const BaseMap = () => {
                   Type: {way.tags?.highway}
                   <br />
                   Name: {way.tags?.name || "Unnamed"}
-                  <br />
-                  Lanes: {way.tags?.lanes || "Unknown"}
-                  <br />
-                  Speed Limit: {way.tags?.maxspeed || "Unknown"}
                 </Popup>
               </Polyline>
             );
           })}
-          {networkNodes.map((node) => (
-            <CircleMarker key={node.id} center={[node.lat, node.lon]} radius={1} color="#1E40AF" fillOpacity={1}>
-              <Popup>
-                Node ID: {node.id}
-                <br />
-                Latitude: {node.lat.toFixed(4)}
-                <br />
-                Longitude: {node.lon.toFixed(4)}
-              </Popup>
-            </CircleMarker>
-          ))}
+          {networkNodes.map((node) => {
+            if (visualizationFilter === "links") return null;
+
+            return (
+              <CircleMarker key={node.id} center={[node.lat, node.lon]} radius={1} color="#1E40AF" fillOpacity={1}>
+                <Popup>
+                  Node ID: {node.id}
+                  <br />
+                  Latitude: {node.lat.toFixed(4)}
+                  <br />
+                  Longitude: {node.lon.toFixed(4)}
+                </Popup>
+              </CircleMarker>
+            );
+          })}
         </MapContainer>
       </div>
       <Sidebar
@@ -405,6 +411,8 @@ export const BaseMap = () => {
         setGNNMap={setSelectedGNNMap}
         setEarthquakeType={setSelectedEarthquakeType}
         setTargetNode={(node: string) => setSelectedTargetNode(Number(node))}
+        visualizationFilter={visualizationFilter}
+        setVisualizationFilter={setVisualizationFilter}
       />
       {error && <div className="error-message">{error}</div>}
     </div>

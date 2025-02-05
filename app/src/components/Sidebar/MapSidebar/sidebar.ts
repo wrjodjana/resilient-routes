@@ -24,4 +24,6 @@ export interface SidebarProps {
   setTargetNode: (node: string) => void;
   setBoundingBox: (box: BoundingBox | null) => void;
   setNetworkNodes: (nodes: NetworkNode[]) => void;
+  visualizationFilter: "all" | "nodes" | "links";
+  setVisualizationFilter: (filter: "all" | "nodes" | "links") => void;
 }

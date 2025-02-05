@@ -42,6 +42,8 @@ interface SidebarProps {
   setGNNMap: (map: string) => void;
   setEarthquakeType: (type: string) => void;
   setTargetNode: (node: string) => void;
+  visualizationFilter: "all" | "nodes" | "links";
+  setVisualizationFilter: (filter: "all" | "nodes" | "links") => void;
 }
 
 export const Sidebar = ({
@@ -58,6 +60,8 @@ export const Sidebar = ({
   setGNNMap,
   setEarthquakeType,
   setTargetNode,
+  visualizationFilter,
+  setVisualizationFilter,
 }: SidebarProps) => {
   // const [startPlace, setStartPlace] = useState<string>("");
   // const [endPlace, setEndPlace] = useState<string>("");
@@ -271,6 +275,14 @@ export const Sidebar = ({
           </div>
         </div>
         {error && <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">{error}</div>}
+        <div className="mb-4 mt-8">
+          <h3 className="text-lg font-bold mb-2 text-cyan font-figtree">Visualization Filter</h3>
+          <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={visualizationFilter} onChange={(e) => setVisualizationFilter(e.target.value as "all" | "nodes" | "links")}>
+            <option value="all">Show All</option>
+            <option value="nodes">Show Nodes Only</option>
+            <option value="links">Show Links Only</option>
+          </select>
+        </div>
         <div className="mt-8 flex flex-col gap-4">
           <button
             onClick={handleFetchNetwork}

@@ -52,9 +52,11 @@ const DrawControl = ({ setBoundingBox }: { setBoundingBox: (box: BoundingBox | n
   const map = useMap();
 
   useEffect(() => {
+    // Store map reference globally
+    (window as any).leafletMap = map;
+
     const drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
-    const mapDrawnItems = drawnItems;
 
     const drawControl = new L.Control.Draw({
       draw: {
@@ -77,7 +79,9 @@ const DrawControl = ({ setBoundingBox }: { setBoundingBox: (box: BoundingBox | n
       },
     });
 
-    map.addControl(drawControl);
+    // Store the draw control instance in the window object
+    (window as any).drawControl = drawControl;
+    (window as any).drawnItems = drawnItems;
 
     map.on(L.Draw.Event.CREATED, (e: any) => {
       const layer = e.layer;
@@ -95,13 +99,16 @@ const DrawControl = ({ setBoundingBox }: { setBoundingBox: (box: BoundingBox | n
         },
       });
     });
+
     map.on(L.Draw.Event.DELETED, () => {
       setBoundingBox(null);
     });
 
     return () => {
-      map.removeControl(drawControl);
       map.removeLayer(drawnItems);
+      delete (window as any).drawControl;
+      delete (window as any).drawnItems;
+      delete (window as any).leafletMap; // Clean up map reference
     };
   }, [map, setBoundingBox]);
 
@@ -196,6 +203,23 @@ export const BaseMap = () => {
     setRunBridgeScenario(false);
     setRunEarthquakeScenario(false);
     setError("");
+    setBoundingBox(null);
+
+    // Clear all drawn items
+    const drawnItems = (window as any).drawnItems;
+    if (drawnItems) {
+      drawnItems.clearLayers();
+    }
+
+    // Get the map instance and remove all layers
+    const map = (window as any).leafletMap;
+    if (map) {
+      map.eachLayer((layer: any) => {
+        if (layer instanceof L.Rectangle) {
+          map.removeLayer(layer);
+        }
+      });
+    }
   };
 
   function getColorByValue(value: number) {
@@ -358,7 +382,7 @@ export const BaseMap = () => {
               .filter((point) => point !== null);
 
             return (
-              <Polyline key={way.id} positions={wayPoints as [number, number][]} color="#FF4B4B" weight={1} opacity={0.8}>
+              <Polyline key={way.id} positions={wayPoints as [number, number][]} color="#FF4B4B" weight={2} opacity={0.8}>
                 <Popup>
                   Way ID: {way.id}
                   <br />

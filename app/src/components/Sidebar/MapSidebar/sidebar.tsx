@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import { API_URL } from "../../../config.ts";
+import L from "leaflet";
 
 export interface BoundingBox {
   northEast: { lat: number; lng: number };
@@ -267,6 +268,24 @@ export const Sidebar = ({
 
   //   setTargetNode(newTargetNode);
   // };
+
+  const handleDrawRectangle = () => {
+    const drawControl = (window as any).drawControl;
+    const map = (window as any).leafletMap;
+
+    if (drawControl && map) {
+      // Clear existing rectangles
+      const drawnItems = (window as any).drawnItems;
+      if (drawnItems) {
+        drawnItems.clearLayers();
+      }
+
+      // Create and enable the rectangle draw handler
+      const rectangleDrawHandler = new L.Draw.Rectangle(map, drawControl.options.draw.rectangle);
+      rectangleDrawHandler.enable();
+    }
+  };
+
   return (
     <div className="w-1/4 p-4 shadow bg-white">
       <h2 className="text-xl font-bold mb-4 text-cyan mt-3">Bridge and Nodes Visualization</h2>
@@ -278,7 +297,10 @@ export const Sidebar = ({
         </select>
       </div>
       <div className="mb-4">
-        <h3 className="text-lg font-bold mb-2 text-cyan font-figtree">Build Bounding Box </h3>
+        <h3 className="text-lg font-bold mb-2 text-cyan font-figtree">Build Bounding Box</h3>
+        <button onClick={handleDrawRectangle} className="w-full py-2 bg-[#4B7BF5] text-white text-base font-medium rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 mb-4">
+          Draw Box
+        </button>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block mb-1 font-bold font-figtree">Min Latitude</label>

@@ -12,6 +12,7 @@ import { API_URL } from "../../config.ts";
 import "leaflet-draw/dist/leaflet.draw.css";
 import * as L from "leaflet";
 import "leaflet-draw";
+import axios from "axios";
 
 interface NetworkNode {
   id: number;
@@ -31,7 +32,6 @@ interface NetworkWay {
   };
 }
 
-// Create a new component for handling map bounds
 const BoundsUpdater = ({ boundingBox }: { boundingBox: BoundingBox | null }) => {
   const map = useMap();
 
@@ -48,22 +48,16 @@ const BoundsUpdater = ({ boundingBox }: { boundingBox: BoundingBox | null }) => 
   return null;
 };
 
-// Create a component for the draw control
 const DrawControl = ({ setBoundingBox }: { setBoundingBox: (box: BoundingBox | null) => void }) => {
   const map = useMap();
 
   useEffect(() => {
-    // Create a FeatureGroup to store editable layers
     const drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
+    const mapDrawnItems = drawnItems;
 
-    // Store the feature group in the map instance so we can access it later
-    map.drawnItems = drawnItems;
-
-    // Specify draw control options
     const drawControl = new L.Control.Draw({
       draw: {
-        // Disable all shapes except rectangle
         polyline: false,
         polygon: false,
         circle: false,
@@ -85,12 +79,10 @@ const DrawControl = ({ setBoundingBox }: { setBoundingBox: (box: BoundingBox | n
 
     map.addControl(drawControl);
 
-    // Handle the draw:created event
     map.on(L.Draw.Event.CREATED, (e: any) => {
       const layer = e.layer;
       drawnItems.addLayer(layer);
 
-      // Get bounds of the drawn rectangle
       const bounds = layer.getBounds();
       setBoundingBox({
         southWest: {
@@ -103,13 +95,10 @@ const DrawControl = ({ setBoundingBox }: { setBoundingBox: (box: BoundingBox | n
         },
       });
     });
-
-    // Handle deletion
     map.on(L.Draw.Event.DELETED, () => {
       setBoundingBox(null);
     });
 
-    // Cleanup
     return () => {
       map.removeControl(drawControl);
       map.removeLayer(drawnItems);
@@ -230,7 +219,7 @@ export const BaseMap = () => {
     <div className="flex h-screen">
       {error && <div className="alert alert-error">{error}</div>}
       <div className="w-5/6 h-full">
-        <MapContainer center={[37.3387, -121.8853]} zoom={12} className="h-full">
+        <MapContainer center={[40.7128, -74.006]} zoom={12} className="h-full">
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
           <DrawControl setBoundingBox={setBoundingBox} />
@@ -369,7 +358,7 @@ export const BaseMap = () => {
               .filter((point) => point !== null);
 
             return (
-              <Polyline key={way.id} positions={wayPoints as [number, number][]} color="#FF4B4B" weight={3} opacity={0.8}>
+              <Polyline key={way.id} positions={wayPoints as [number, number][]} color="#FF4B4B" weight={1} opacity={0.8}>
                 <Popup>
                   Way ID: {way.id}
                   <br />
@@ -384,7 +373,7 @@ export const BaseMap = () => {
             if (visualizationFilter === "links") return null;
 
             return (
-              <CircleMarker key={node.id} center={[node.lat, node.lon]} radius={1} color="#1E40AF" fillOpacity={1}>
+              <CircleMarker key={node.id} center={[node.lat, node.lon]} radius={3} color="#1E40AF" fillOpacity={1}>
                 <Popup>
                   Node ID: {node.id}
                   <br />

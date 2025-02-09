@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-import { SidebarProps } from "./sidebar";
-
 import { API_URL } from "../../../config.ts";
 
 export interface BoundingBox {
@@ -117,12 +115,12 @@ export const Sidebar = ({
     const query = `
       [out:json][timeout:25];
       (
-        // Just the main motorway
-        way["highway"="motorway"]
+        // Get all major road types
+        way["highway"~"^(motorway|trunk|primary|secondary|tertiary|residential|unclassified)$"]
           (${minLat},${minLng},${maxLat},${maxLng});
       );
       out body;
-      >;
+      >;  // Get all nodes that are part of these ways
       out skel qt;
     `;
 
@@ -137,10 +135,35 @@ export const Sidebar = ({
       });
 
       if (response.data && response.data.elements) {
-        const nodes = response.data.elements.filter((elem) => elem.type === "node");
-        const ways = response.data.elements.filter((elem) => elem.type === "way");
+        const allNodes = response.data.elements.filter((elem: any) => elem.type === "node");
+        const ways = response.data.elements.filter((elem: any) => elem.type === "way");
 
-        setNetworkNodes(nodes);
+        const nodeRoadCount = new Map<number, Set<string>>();
+        ways.forEach((way: any) => {
+          const roadName = way.tags?.name || way.tags?.highway || way.id;
+          way.nodes.forEach((nodeId: number) => {
+            if (!nodeRoadCount.has(nodeId)) {
+              nodeRoadCount.set(nodeId, new Set());
+            }
+            nodeRoadCount.get(nodeId)?.add(roadName);
+          });
+        });
+
+        const isDeadEnd = (nodeId: number): boolean => {
+          return ways.some((way: any) => {
+            const nodes = way.nodes;
+            return nodeId === nodes[0] || nodeId === nodes[nodes.length - 1];
+          });
+        };
+
+        const intersectionNodes = allNodes.filter((node: any) => {
+          const uniqueRoads = nodeRoadCount.get(node.id);
+          if (!uniqueRoads) return false;
+
+          return uniqueRoads.size > 1 || isDeadEnd(node.id);
+        });
+
+        setNetworkNodes(intersectionNodes);
         setNetworkWays(ways);
       }
     } catch (error) {

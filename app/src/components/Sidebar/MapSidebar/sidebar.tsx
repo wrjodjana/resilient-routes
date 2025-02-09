@@ -274,13 +274,11 @@ export const Sidebar = ({
     const map = (window as any).leafletMap;
 
     if (drawControl && map) {
-      // Clear existing rectangles
       const drawnItems = (window as any).drawnItems;
       if (drawnItems) {
         drawnItems.clearLayers();
       }
 
-      // Create and enable the rectangle draw handler
       const rectangleDrawHandler = new L.Draw.Rectangle(map, drawControl.options.draw.rectangle);
       rectangleDrawHandler.enable();
     }

@@ -52,7 +52,6 @@ const DrawControl = ({ setBoundingBox }: { setBoundingBox: (box: BoundingBox | n
   const map = useMap();
 
   useEffect(() => {
-    // Store map reference globally
     (window as any).leafletMap = map;
 
     const drawnItems = new L.FeatureGroup();
@@ -79,7 +78,6 @@ const DrawControl = ({ setBoundingBox }: { setBoundingBox: (box: BoundingBox | n
       },
     });
 
-    // Store the draw control instance in the window object
     (window as any).drawControl = drawControl;
     (window as any).drawnItems = drawnItems;
 
@@ -108,7 +106,7 @@ const DrawControl = ({ setBoundingBox }: { setBoundingBox: (box: BoundingBox | n
       map.removeLayer(drawnItems);
       delete (window as any).drawControl;
       delete (window as any).drawnItems;
-      delete (window as any).leafletMap; // Clean up map reference
+      delete (window as any).leafletMap;
     };
   }, [map, setBoundingBox]);
 
@@ -205,13 +203,11 @@ export const BaseMap = () => {
     setError("");
     setBoundingBox(null);
 
-    // Clear all drawn items
     const drawnItems = (window as any).drawnItems;
     if (drawnItems) {
       drawnItems.clearLayers();
     }
 
-    // Get the map instance and remove all layers
     const map = (window as any).leafletMap;
     if (map) {
       map.eachLayer((layer: any) => {

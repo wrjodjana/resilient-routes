@@ -12,18 +12,20 @@ export interface NetworkNode {
   };
 }
 
+export interface NetworkWay {
+  type: "way";
+  id: number;
+  nodes: number[];
+  tags?: {
+    [key: string]: string;
+  };
+}
+
 export interface SidebarProps {
-  setSelectedNodeData: (data: any) => void;
-  runAllScenarios: () => void;
-  runBridgeScenario: () => void;
-  reset: () => void;
-  setMap: (mapName: string) => void;
-  runEarthquakeScenario: () => void;
-  setGNNMap: (mapName: string) => void;
-  setEarthquakeType: (type: string) => void;
-  setTargetNode: (node: string) => void;
+  boundingBox: BoundingBox | null;
   setBoundingBox: (box: BoundingBox | null) => void;
   setNetworkNodes: (nodes: NetworkNode[]) => void;
+  setNetworkWays: (ways: NetworkWay[]) => void;
   visualizationFilter: "all" | "nodes" | "links";
   setVisualizationFilter: (filter: "all" | "nodes" | "links") => void;
 }

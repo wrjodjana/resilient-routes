@@ -1,8 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import App from "./App";
-import reportWebVitals from "./reportWebVitals";
+import App from "./app/app";
 import "@fontsource/figtree/400.css";
 import "@fontsource/figtree/700.css";
 
@@ -12,5 +11,3 @@ root.render(
     <App />
   </React.StrictMode>
 );
-
-reportWebVitals();

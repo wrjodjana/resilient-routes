@@ -116,6 +116,20 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
     setNetworkNodes([]);
     setNetworkWays([]);
     setBoundingBox(null);
+
+    const drawnItems = (window as any).drawnItems;
+    if (drawnItems) {
+      drawnItems.clearLayers();
+    }
+
+    const map = (window as any).leafletMap;
+    if (map) {
+      map.eachLayer((layer: any) => {
+        if (layer instanceof L.Rectangle) {
+          map.removeLayer(layer);
+        }
+      });
+    }
   };
 
   useEffect(() => {

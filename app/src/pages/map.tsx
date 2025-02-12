@@ -160,7 +160,7 @@ export const BaseMap = () => {
             return (
               <Polyline key={way.id} positions={wayPoints as [number, number][]} color="#FF4B4B" weight={2} opacity={0.8}>
                 <Popup>
-                  Way ID: {way.id}
+                  Link ID: {way.id}
                   <br />
                   Type: {way.tags?.highway}
                   <br />

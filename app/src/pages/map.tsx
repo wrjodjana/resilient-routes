@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Popup, Polyline, CircleMarker, Rectangle, useMap } from "react-leaflet";
 import { Sidebar } from "../components/sidebar.tsx";
-import { BoundingBox } from "../types/sidebar.ts";
+import { BoundingBox, VisualizationFilter } from "../types/sidebar.ts";
 import "leaflet/dist/leaflet.css";
 import { NetworkNode, NetworkWay } from "../types/map.ts";
 import { API_URL } from "../config.ts";
@@ -96,7 +96,18 @@ export const BaseMap = () => {
   const [boundingBox, setBoundingBox] = useState<BoundingBox | null>(null);
   const [networkNodes, setNetworkNodes] = useState<NetworkNode[]>([]);
   const [networkWays, setNetworkWays] = useState<NetworkWay[]>([]);
-  const [visualizationFilter, setVisualizationFilter] = useState<"all" | "nodes" | "links">("all");
+  const [visualizationFilter, setVisualizationFilter] = useState<VisualizationFilter>({
+    showWays: true,
+    roadTypes: {
+      motorway: true,
+      trunk: true,
+      primary: true,
+      secondary: true,
+      tertiary: true,
+      residential: true,
+      unclassified: true,
+    },
+  });
 
   useEffect(() => {
     if (boundingBox) {
@@ -148,7 +159,9 @@ export const BaseMap = () => {
             />
           )}
           {networkWays.map((way) => {
-            if (visualizationFilter === "nodes") return null;
+            if (!visualizationFilter.showWays) return null;
+            if (!way.tags?.highway) return null;
+            if (!visualizationFilter.roadTypes[way.tags.highway as keyof typeof visualizationFilter.roadTypes]) return null;
 
             const wayPoints = way.nodes
               .map((nodeId) => {
@@ -157,8 +170,20 @@ export const BaseMap = () => {
               })
               .filter((point) => point !== null);
 
+            const roadColors = {
+              motorway: "#e892a2",
+              trunk: "#f9b29c",
+              primary: "#fcd6a4",
+              secondary: "#f7fabf",
+              tertiary: "#ffffff",
+              residential: "#ffffff",
+              unclassified: "#ffffff",
+            };
+
+            const roadColor = roadColors[way.tags.highway as keyof typeof roadColors] || "#FF4B4B";
+
             return (
-              <Polyline key={way.id} positions={wayPoints as [number, number][]} color="#FF4B4B" weight={2} opacity={0.8}>
+              <Polyline key={way.id} positions={wayPoints as [number, number][]} color={roadColor} weight={4} opacity={1}>
                 <Popup>
                   Link ID: {way.id}
                   <br />
@@ -169,21 +194,33 @@ export const BaseMap = () => {
               </Polyline>
             );
           })}
-          {networkNodes.map((node) => {
-            if (visualizationFilter === "links") return null;
-
-            return (
-              <CircleMarker key={node.id} center={[node.lat, node.lon]} radius={3} color="#1E40AF" fillOpacity={1}>
-                <Popup>
-                  Node ID: {node.id}
-                  <br />
-                  Latitude: {node.lat.toFixed(4)}
-                  <br />
-                  Longitude: {node.lon.toFixed(4)}
-                </Popup>
-              </CircleMarker>
-            );
-          })}
+          {networkNodes
+            .filter((node) => {
+              console.log("Node being checked:", node);
+              return node.tags?.bridge === "yes";
+            })
+            .map((node) => {
+              console.log("Rendering bridge node:", node);
+              return (
+                <CircleMarker
+                  key={node.id}
+                  center={[node.lat, node.lon]}
+                  radius={8}
+                  pathOptions={{
+                    fillColor: "#ff0000",
+                    fillOpacity: 1,
+                    color: "#000",
+                    weight: 2,
+                  }}
+                >
+                  <Popup>
+                    Bridge ID: {node.id}
+                    <br />
+                    Name: {node.tags?.name || "Unnamed"}
+                  </Popup>
+                </CircleMarker>
+              );
+            })}
         </MapContainer>
       </div>
       <Sidebar boundingBox={boundingBox} setBoundingBox={setBoundingBox} setNetworkNodes={setNetworkNodes} setNetworkWays={setNetworkWays} visualizationFilter={visualizationFilter} setVisualizationFilter={setVisualizationFilter} />

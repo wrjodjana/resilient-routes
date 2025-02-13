@@ -3,10 +3,11 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { API_URL } from "../config.ts";
 import L from "leaflet";
-import { BoundingBox, NetworkNode, NetworkWay, SidebarProps } from "../types/sidebar.ts";
+import { BoundingBox, NetworkNode, NetworkWay, SidebarProps, VisualizationFilter } from "../types/sidebar.ts";
 
 export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetworkWays, visualizationFilter, setVisualizationFilter }: SidebarProps) => {
   const [error, setError] = useState<string | null>(null);
+  const [mapOpacity, setMapOpacity] = useState<number>(1);
 
   const [minLat, setMinLat] = useState<number | "">("");
   const [maxLat, setMaxLat] = useState<number | "">("");
@@ -51,8 +52,11 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
     const query = `
       [out:json][timeout:25];
       (
-        // Get all major road types
+        // Get all roads
         way["highway"~"^(motorway|trunk|primary|secondary|tertiary|residential|unclassified)$"]
+          (${minLat},${minLng},${maxLat},${maxLng});
+        // Get all bridges as nodes
+        node["bridge"="yes"]
           (${minLat},${minLng},${maxLat},${maxLng});
       );
       out body;
@@ -71,35 +75,11 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
       });
 
       if (response.data && response.data.elements) {
-        const allNodes = response.data.elements.filter((elem: any) => elem.type === "node");
+        const bridges = response.data.elements.filter((elem: any) => elem.type === "node" && elem.tags?.bridge === "yes");
         const ways = response.data.elements.filter((elem: any) => elem.type === "way");
+        const otherNodes = response.data.elements.filter((elem: any) => elem.type === "node" && !elem.tags?.bridge);
 
-        const nodeRoadCount = new Map<number, Set<string>>();
-        ways.forEach((way: any) => {
-          const roadName = way.tags?.name || way.tags?.highway || way.id;
-          way.nodes.forEach((nodeId: number) => {
-            if (!nodeRoadCount.has(nodeId)) {
-              nodeRoadCount.set(nodeId, new Set());
-            }
-            nodeRoadCount.get(nodeId)?.add(roadName);
-          });
-        });
-
-        const isDeadEnd = (nodeId: number): boolean => {
-          return ways.some((way: any) => {
-            const nodes = way.nodes;
-            return nodeId === nodes[0] || nodeId === nodes[nodes.length - 1];
-          });
-        };
-
-        const intersectionNodes = allNodes.filter((node: any) => {
-          const uniqueRoads = nodeRoadCount.get(node.id);
-          if (!uniqueRoads) return false;
-
-          return uniqueRoads.size > 1 || isDeadEnd(node.id);
-        });
-
-        setNetworkNodes(intersectionNodes);
+        setNetworkNodes([...bridges, ...otherNodes]);
         setNetworkWays(ways);
       }
     } catch (error) {
@@ -141,6 +121,17 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
     }
   }, [boundingBox]);
 
+  useEffect(() => {
+    const map = (window as any).leafletMap;
+    if (map) {
+      map.eachLayer((layer: any) => {
+        if (layer instanceof L.TileLayer) {
+          layer.setOpacity(mapOpacity);
+        }
+      });
+    }
+  }, [mapOpacity]);
+
   const handleDrawRectangle = () => {
     const drawControl = (window as any).drawControl;
     const map = (window as any).leafletMap;
@@ -154,6 +145,27 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
       const rectangleDrawHandler = new L.Draw.Rectangle(map, drawControl.options.draw.rectangle);
       rectangleDrawHandler.enable();
     }
+  };
+
+  // Define road types outside of render to avoid recreating on each render
+  const roadTypes = [
+    { id: "motorway", label: "Motorway", color: "#e892a2" },
+    { id: "trunk", label: "Trunk", color: "#f9b29c" },
+    { id: "primary", label: "Primary", color: "#fcd6a4" },
+    { id: "secondary", label: "Secondary", color: "#f7fabf" },
+    { id: "tertiary", label: "Tertiary", color: "#ffffff" },
+    { id: "residential", label: "Residential", color: "#ffffff" },
+    { id: "unclassified", label: "Unclassified", color: "#ffffff" },
+  ] as const;
+  const handleRoadTypeChange = (roadType: keyof VisualizationFilter["roadTypes"]) => {
+    setVisualizationFilter((prev: VisualizationFilter): VisualizationFilter => {
+      const updatedRoadTypes = { ...prev.roadTypes };
+      updatedRoadTypes[roadType] = !updatedRoadTypes[roadType];
+      return {
+        ...prev,
+        roadTypes: updatedRoadTypes,
+      };
+    });
   };
 
   return (
@@ -191,12 +203,29 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
         </div>
         {error && <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">{error}</div>}
         <div className="mb-4 mt-8">
-          <h3 className="text-lg font-bold mb-2 text-cyan font-figtree">Visualization Filter</h3>
-          <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" value={visualizationFilter} onChange={(e) => setVisualizationFilter(e.target.value as "all" | "nodes" | "links")}>
-            <option value="all">Show All</option>
-            <option value="nodes">Show Nodes Only</option>
-            <option value="links">Show Links Only</option>
-          </select>
+          <h3 className="text-lg font-bold mb-2 text-cyan font-figtree">Map Background Opacity</h3>
+          <input type="range" min="0" max="1" step="0.1" value={mapOpacity} onChange={(e) => setMapOpacity(Number(e.target.value))} className="w-full" />
+          <div className="text-sm text-gray-600 text-center mt-1">{Math.round(mapOpacity * 100)}%</div>
+        </div>
+        <div className="mb-4 mt-8">
+          <h3 className="text-lg font-bold mb-2 text-cyan font-figtree">Road Types</h3>
+          <div className="space-y-2">
+            {roadTypes.map(({ id, label, color }) => (
+              <div key={id} className="flex items-center">
+                <input
+                  type="checkbox"
+                  id={id}
+                  checked={visualizationFilter.roadTypes?.[id as keyof typeof visualizationFilter.roadTypes] ?? true}
+                  onChange={() => handleRoadTypeChange(id as keyof VisualizationFilter["roadTypes"])}
+                  className="mr-2"
+                />
+                <label htmlFor={id} className="flex items-center">
+                  <div className="w-4 h-4 mr-2" style={{ backgroundColor: color, border: "1px solid #ccc" }}></div>
+                  {label}
+                </label>
+              </div>
+            ))}
+          </div>
         </div>
         <div className="mt-8 flex flex-col gap-4">
           <button

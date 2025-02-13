@@ -26,6 +26,19 @@ export interface SidebarProps {
   setBoundingBox: (box: BoundingBox | null) => void;
   setNetworkNodes: (nodes: NetworkNode[]) => void;
   setNetworkWays: (ways: NetworkWay[]) => void;
-  visualizationFilter: "all" | "nodes" | "links";
-  setVisualizationFilter: (filter: "all" | "nodes" | "links") => void;
+  visualizationFilter: VisualizationFilter;
+  setVisualizationFilter: (filter: VisualizationFilter | ((prev: VisualizationFilter) => VisualizationFilter)) => void;
+}
+
+export interface VisualizationFilter {
+  showWays: boolean;
+  roadTypes: {
+    motorway: boolean;
+    trunk: boolean;
+    primary: boolean;
+    secondary: boolean;
+    tertiary: boolean;
+    residential: boolean;
+    unclassified: boolean;
+  };
 }

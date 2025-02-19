@@ -148,15 +148,14 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
     }
   };
 
-  // Define road types outside of render to avoid recreating on each render
   const roadTypes = [
-    { id: "motorway", label: "Motorway", color: "#e892a2" },
-    { id: "trunk", label: "Trunk", color: "#f9b29c" },
-    { id: "primary", label: "Primary", color: "#fcd6a4" },
-    { id: "secondary", label: "Secondary", color: "#f7fabf" },
-    { id: "tertiary", label: "Tertiary", color: "#ffffff" },
-    { id: "residential", label: "Residential", color: "#ffffff" },
-    { id: "unclassified", label: "Unclassified", color: "#ffffff" },
+    { id: "motorway", label: "Motorway", color: "#d73027" },
+    { id: "trunk", label: "Trunk", color: "#fc8d59" },
+    { id: "primary", label: "Primary", color: "#fee090" },
+    { id: "secondary", label: "Secondary", color: "#91bfdb" },
+    { id: "tertiary", label: "Tertiary", color: "#4575b4" },
+    { id: "residential", label: "Residential", color: "#999999" },
+    { id: "unclassified", label: "Unclassified", color: "#666666" },
   ] as const;
   const handleRoadTypeChange = (roadType: keyof VisualizationFilter["roadTypes"]) => {
     setVisualizationFilter((prev: VisualizationFilter): VisualizationFilter => {
@@ -168,6 +167,12 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
       };
     });
   };
+
+  const viewOptions = [
+    { id: "network-only", label: "Network Only", icon: "🛣️" },
+    { id: "bridges-only", label: "Bridges Only", icon: "🌉" },
+    { id: "network-and-bridges", label: "Network & Bridges", icon: "🗺️" },
+  ] as const;
 
   return (
     <div className="w-1/4 p-4 shadow bg-white h-screen overflow-y-auto fixed right-0 top-0 z-50">
@@ -294,6 +299,31 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
           <div className="flex items-center gap-4">
             <input type="range" min="0" max="1" step="0.1" value={mapOpacity} onChange={(e) => setMapOpacity(Number(e.target.value))} className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#4B7BF5]" />
             <div className="w-16 px-2 py-1 bg-white border border-gray-200 rounded text-sm text-center font-medium">{Math.round(mapOpacity * 100)}%</div>
+          </div>
+        </div>
+        <div className="mb-4 mt-8 p-4 bg-gray-50 rounded-lg">
+          <h3 className="text-lg font-bold mb-3 text-cyan font-figtree flex items-center">
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            View Mode
+          </h3>
+          <div className="grid grid-cols-3 gap-2">
+            {viewOptions.map((option) => (
+              <button
+                key={option.id}
+                onClick={() => setVisualizationFilter((prev) => ({ ...prev, viewMode: option.id }))}
+                className={`
+                  p-3 rounded-lg border transition-all duration-200
+                  flex flex-col items-center justify-center gap-1
+                  ${visualizationFilter.viewMode === option.id ? "bg-blue-50 border-blue-500 text-blue-700 font-medium shadow-sm" : "bg-white border-gray-200 text-gray-600 hover:border-blue-300 hover:bg-blue-50"}
+                `}
+              >
+                <span className="text-xl">{option.icon}</span>
+                <span className="text-sm whitespace-nowrap">{option.label}</span>
+              </button>
+            ))}
           </div>
         </div>
         <div className="mt-8 flex flex-col gap-4">

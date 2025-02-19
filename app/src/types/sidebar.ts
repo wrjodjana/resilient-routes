@@ -41,4 +41,5 @@ export interface VisualizationFilter {
     residential: boolean;
     unclassified: boolean;
   };
+  viewMode: "network-only" | "bridges-only" | "network-and-bridges";
 }

@@ -107,6 +107,7 @@ export const BaseMap = () => {
       residential: true,
       unclassified: true,
     },
+    viewMode: "network-and-bridges",
   });
 
   useEffect(() => {
@@ -158,69 +159,72 @@ export const BaseMap = () => {
               }}
             />
           )}
-          {networkWays.map((way) => {
-            if (!visualizationFilter.showWays) return null;
-            if (!way.tags?.highway) return null;
-            if (!visualizationFilter.roadTypes[way.tags.highway as keyof typeof visualizationFilter.roadTypes]) return null;
+          {(visualizationFilter.viewMode === "network-only" || visualizationFilter.viewMode === "network-and-bridges") &&
+            networkWays.map((way) => {
+              if (!visualizationFilter.showWays) return null;
+              if (!way.tags?.highway) return null;
+              if (!visualizationFilter.roadTypes[way.tags.highway as keyof typeof visualizationFilter.roadTypes]) return null;
 
-            const wayPoints = way.nodes
-              .map((nodeId) => {
-                const node = networkNodes.find((n) => n.id === nodeId);
-                return node ? [node.lat, node.lon] : null;
-              })
-              .filter((point) => point !== null);
+              const wayPoints = way.nodes
+                .map((nodeId) => {
+                  const node = networkNodes.find((n) => n.id === nodeId);
+                  return node ? [node.lat, node.lon] : null;
+                })
+                .filter((point) => point !== null);
 
-            const roadColors = {
-              motorway: "#e892a2",
-              trunk: "#f9b29c",
-              primary: "#fcd6a4",
-              secondary: "#f7fabf",
-              tertiary: "#ffffff",
-              residential: "#ffffff",
-              unclassified: "#ffffff",
-            };
+              const roadColors = {
+                motorway: "#d73027",
+                trunk: "#fc8d59",
+                primary: "#fee090",
+                secondary: "#91bfdb",
+                tertiary: "#4575b4",
+                residential: "#999999",
+                unclassified: "#666666",
+              };
 
-            const roadColor = roadColors[way.tags.highway as keyof typeof roadColors] || "#FF4B4B";
+              const roadColor = roadColors[way.tags.highway as keyof typeof roadColors] || "#FF4B4B";
 
-            return (
-              <Polyline key={way.id} positions={wayPoints as [number, number][]} color={roadColor} weight={4} opacity={1}>
-                <Popup>
-                  Link ID: {way.id}
-                  <br />
-                  Type: {way.tags?.highway}
-                  <br />
-                  Name: {way.tags?.name || "Unnamed"}
-                </Popup>
-              </Polyline>
-            );
-          })}
-          {networkNodes
-            .filter((node) => {
-              return node.tags?.bridge === "yes" || networkWays.some((way) => way.tags?.bridge === "yes" && way.nodes.includes(node.id));
-            })
-            .map((node) => {
               return (
-                <CircleMarker
-                  key={node.id}
-                  center={[node.lat, node.lon]}
-                  radius={5}
-                  pathOptions={{
-                    fillColor: "#ff0000",
-                    fillOpacity: 1,
-                    color: "#000",
-                    weight: 2,
-                  }}
-                >
+                <Polyline key={way.id} positions={wayPoints as [number, number][]} color={roadColor} weight={4} opacity={1}>
                   <Popup>
-                    Bridge ID: {node.id}
+                    Link ID: {way.id}
                     <br />
-                    Name: {node.tags?.name || "Unnamed"}
+                    Type: {way.tags?.highway}
                     <br />
-                    Type: {node.tags?.bridge_type || "Unknown"}
+                    Name: {way.tags?.name || "Unnamed"}
                   </Popup>
-                </CircleMarker>
+                </Polyline>
               );
             })}
+          {(visualizationFilter.viewMode === "bridges-only" || visualizationFilter.viewMode === "network-and-bridges") &&
+            networkNodes
+              .filter((node) => {
+                return node.tags?.bridge === "yes" || networkWays.some((way) => way.tags?.bridge === "yes" && way.nodes.includes(node.id));
+              })
+              .map((node) => {
+                return (
+                  <CircleMarker
+                    key={node.id}
+                    center={[node.lat, node.lon]}
+                    radius={7}
+                    pathOptions={{
+                      fillColor: "#ff3b3b",
+                      fillOpacity: 0.8,
+                      color: "#ffffff",
+                      weight: 2,
+                      opacity: 1,
+                    }}
+                  >
+                    <Popup>
+                      Bridge ID: {node.id}
+                      <br />
+                      Name: {node.tags?.name || "Unnamed"}
+                      <br />
+                      Type: {node.tags?.bridge_type || "Unknown"}
+                    </Popup>
+                  </CircleMarker>
+                );
+              })}
         </MapContainer>
       </div>
       <Sidebar boundingBox={boundingBox} setBoundingBox={setBoundingBox} setNetworkNodes={setNetworkNodes} setNetworkWays={setNetworkWays} visualizationFilter={visualizationFilter} setVisualizationFilter={setVisualizationFilter} />

@@ -137,8 +137,8 @@ export const BaseMap = () => {
   return (
     <div className="flex h-screen">
       {error && <div className="alert alert-error">{error}</div>}
-      <div className="w-5/6 h-full">
-        <MapContainer center={[40.7128, -74.006]} zoom={12} className="h-full">
+      <div className="w-3/4 h-full">
+        <MapContainer center={[40.7128, -74.006]} zoom={12} className="h-full w-full">
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
           <DrawControl setBoundingBox={setBoundingBox} />
@@ -196,16 +196,14 @@ export const BaseMap = () => {
           })}
           {networkNodes
             .filter((node) => {
-              console.log("Node being checked:", node);
-              return node.tags?.bridge === "yes";
+              return node.tags?.bridge === "yes" || networkWays.some((way) => way.tags?.bridge === "yes" && way.nodes.includes(node.id));
             })
             .map((node) => {
-              console.log("Rendering bridge node:", node);
               return (
                 <CircleMarker
                   key={node.id}
                   center={[node.lat, node.lon]}
-                  radius={8}
+                  radius={5}
                   pathOptions={{
                     fillColor: "#ff0000",
                     fillOpacity: 1,
@@ -217,6 +215,8 @@ export const BaseMap = () => {
                     Bridge ID: {node.id}
                     <br />
                     Name: {node.tags?.name || "Unnamed"}
+                    <br />
+                    Type: {node.tags?.bridge_type || "Unknown"}
                   </Popup>
                 </CircleMarker>
               );

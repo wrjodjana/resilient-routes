@@ -55,12 +55,14 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
         // Get all roads
         way["highway"~"^(motorway|trunk|primary|secondary|tertiary|residential|unclassified)$"]
           (${minLat},${minLng},${maxLat},${maxLng});
-        // Get all bridges as nodes
+        // Get all bridges
+        way["bridge"="yes"]
+          (${minLat},${minLng},${maxLat},${maxLng});
         node["bridge"="yes"]
           (${minLat},${minLng},${maxLat},${maxLng});
       );
       out body;
-      >;  // Get all nodes that are part of these ways
+      >;
       out skel qt;
     `;
 
@@ -75,11 +77,10 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
       });
 
       if (response.data && response.data.elements) {
-        const bridges = response.data.elements.filter((elem: any) => elem.type === "node" && elem.tags?.bridge === "yes");
         const ways = response.data.elements.filter((elem: any) => elem.type === "way");
-        const otherNodes = response.data.elements.filter((elem: any) => elem.type === "node" && !elem.tags?.bridge);
+        const nodes = response.data.elements.filter((elem: any) => elem.type === "node");
 
-        setNetworkNodes([...bridges, ...otherNodes]);
+        setNetworkNodes(nodes);
         setNetworkWays(ways);
       }
     } catch (error) {
@@ -169,74 +170,155 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
   };
 
   return (
-    <div className="w-1/4 p-4 shadow bg-white">
-      <h2 className="text-xl font-bold mb-4 text-cyan mt-3">Bridge and Nodes Visualization</h2>
-      <div className="mb-4">
-        <h3 className="text-lg font-bold mb-2 text-cyan font-figtree">Select Menu </h3>
-        <select className="w-full px-2 py-1 border border-gray-300 rounded font-figtree">
-          <option>Connectivity</option>
-          <option>Static Trafic Assignment</option>
+    <div className="w-1/4 p-4 shadow bg-white h-screen overflow-y-auto fixed right-0 top-0 z-50">
+      <h2 className="text-xl font-bold mb-4 text-cyan mt-3 flex items-center">
+        <svg className="w-6 h-6 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M6 21C7.5 19.4 9 17.9673 9 16.2C9 14.4327 7.65685 13 6 13C4.34315 13 3 14.4327 3 16.2C3 17.9673 4.5 19.4 6 21ZM6 21H17.5C18.8807 21 20 19.8807 20 18.5C20 17.1193 18.8807 16 17.5 16H15M18 11C19.5 9.4 21 7.96731 21 6.2C21 4.43269 19.6569 3 18 3C16.3431 3 15 4.43269 15 6.2C15 7.96731 16.5 9.4 18 11ZM18 11H14.5C13.1193 11 12 12.1193 12 13.5C12 14.8807 13.1193 16 14.5 16H15.6"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        Resilient Routes
+      </h2>
+
+      <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+        <h3 className="text-lg font-bold mb-3 text-cyan font-figtree flex items-center">
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
+          </svg>
+          Select Menu
+        </h3>
+        <select className="w-full px-3 py-2.5 border border-gray-300 rounded-md font-figtree bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 cursor-pointer hover:border-blue-400">
+          <option value="connectivity">Connectivity</option>
+          <option value="static_traffic">Static Traffic Assignment</option>
         </select>
       </div>
       <div className="mb-4">
-        <h3 className="text-lg font-bold mb-2 text-cyan font-figtree">Build Bounding Box</h3>
-        <button onClick={handleDrawRectangle} className="w-full py-2 bg-[#4B7BF5] text-white text-base font-medium rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 mb-4">
-          Draw Box
-        </button>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block mb-1 font-bold font-figtree">Min Latitude</label>
-            <input type="number" value={minLat} onChange={(e) => setMinLat(e.target.value ? Number(e.target.value) : "")} className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" />
-          </div>
-          <div>
-            <label className="block mb-1 font-bold font-figtree">Max Latitude</label>
-            <input type="number" value={maxLat} onChange={(e) => setMaxLat(e.target.value ? Number(e.target.value) : "")} className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" />
-          </div>
-          <div>
-            <label className="block mb-1 font-bold font-figtree">Min Longitude</label>
-            <input type="number" value={minLng} onChange={(e) => setMinLng(e.target.value ? Number(e.target.value) : "")} className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" />
-          </div>
-          <div>
-            <label className="block mb-1 font-bold font-figtree">Max Longitude</label>
-            <input type="number" value={maxLng} onChange={(e) => setMaxLng(e.target.value ? Number(e.target.value) : "")} className="w-full px-2 py-1 border border-gray-300 rounded font-figtree" />
+        <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+          <h3 className="text-lg font-bold mb-3 text-cyan font-figtree flex items-center">
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a2 2 0 012-2h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm0 0v14h16V5H4z" />
+            </svg>
+            Build Bounding Box
+          </h3>
+          <button
+            onClick={handleDrawRectangle}
+            className="w-full py-2.5 mb-4 bg-[#4B7BF5] text-white text-base font-medium rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center"
+          >
+            Draw Box
+          </button>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white p-3 rounded-md border border-gray-200">
+              <label className="block mb-1.5 font-bold text-sm text-gray-700 font-figtree">Min Latitude</label>
+              <input
+                type="number"
+                value={minLat}
+                onChange={(e) => setMinLat(e.target.value ? Number(e.target.value) : "")}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md font-figtree focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+              />
+            </div>
+            <div className="bg-white p-3 rounded-md border border-gray-200">
+              <label className="block mb-1.5 font-bold text-sm text-gray-700 font-figtree">Max Latitude</label>
+              <input
+                type="number"
+                value={maxLat}
+                onChange={(e) => setMaxLat(e.target.value ? Number(e.target.value) : "")}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md font-figtree focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+              />
+            </div>
+            <div className="bg-white p-3 rounded-md border border-gray-200">
+              <label className="block mb-1.5 font-bold text-sm text-gray-700 font-figtree">Min Longitude</label>
+              <input
+                type="number"
+                value={minLng}
+                onChange={(e) => setMinLng(e.target.value ? Number(e.target.value) : "")}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md font-figtree focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+              />
+            </div>
+            <div className="bg-white p-3 rounded-md border border-gray-200">
+              <label className="block mb-1.5 font-bold text-sm text-gray-700 font-figtree">Max Longitude</label>
+              <input
+                type="number"
+                value={maxLng}
+                onChange={(e) => setMaxLng(e.target.value ? Number(e.target.value) : "")}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md font-figtree focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+              />
+            </div>
           </div>
         </div>
         {error && <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">{error}</div>}
-        <div className="mb-4 mt-8">
-          <h3 className="text-lg font-bold mb-2 text-cyan font-figtree">Map Background Opacity</h3>
-          <input type="range" min="0" max="1" step="0.1" value={mapOpacity} onChange={(e) => setMapOpacity(Number(e.target.value))} className="w-full" />
-          <div className="text-sm text-gray-600 text-center mt-1">{Math.round(mapOpacity * 100)}%</div>
-        </div>
-        <div className="mb-4 mt-8">
-          <h3 className="text-lg font-bold mb-2 text-cyan font-figtree">Road Types</h3>
-          <div className="space-y-2">
+        <div className="mb-4 mt-8 p-4 bg-gray-50 rounded-lg">
+          <h3 className="text-lg font-bold mb-3 text-cyan font-figtree flex items-center">
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z"
+              />
+            </svg>
+            Road Types
+          </h3>
+          <div className="space-y-3">
             {roadTypes.map(({ id, label, color }) => (
-              <div key={id} className="flex items-center">
+              <div key={id} className="flex items-center bg-white p-2 rounded-md border border-gray-200">
                 <input
                   type="checkbox"
                   id={id}
                   checked={visualizationFilter.roadTypes?.[id as keyof typeof visualizationFilter.roadTypes] ?? true}
                   onChange={() => handleRoadTypeChange(id as keyof VisualizationFilter["roadTypes"])}
-                  className="mr-2"
+                  className="w-4 h-4 mr-3 accent-[#4B7BF5] cursor-pointer"
                 />
-                <label htmlFor={id} className="flex items-center">
-                  <div className="w-4 h-4 mr-2" style={{ backgroundColor: color, border: "1px solid #ccc" }}></div>
-                  {label}
+                <label htmlFor={id} className="flex items-center flex-1 cursor-pointer">
+                  <div className="w-5 h-5 mr-3 rounded" style={{ backgroundColor: color, border: "1px solid #ccc" }}></div>
+                  <span className="font-medium">{label}</span>
                 </label>
               </div>
             ))}
+          </div>
+        </div>
+        <div className="mb-4 mt-8 p-4 bg-gray-50 rounded-lg">
+          <h3 className="text-lg font-bold mb-3 text-cyan font-figtree flex items-center">
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+              />
+            </svg>
+            Map Background Opacity
+          </h3>
+          <div className="flex items-center gap-4">
+            <input type="range" min="0" max="1" step="0.1" value={mapOpacity} onChange={(e) => setMapOpacity(Number(e.target.value))} className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#4B7BF5]" />
+            <div className="w-16 px-2 py-1 bg-white border border-gray-200 rounded text-sm text-center font-medium">{Math.round(mapOpacity * 100)}%</div>
           </div>
         </div>
         <div className="mt-8 flex flex-col gap-4">
           <button
             onClick={handleFetchNetwork}
             disabled={!minLat || !maxLat || !minLng || !maxLng}
-            className="w-full py-3 bg-[#4B7BF5] text-white text-lg font-medium rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-blue-300 disabled:cursor-not-allowed"
+            className="w-full py-3.5 bg-[#4B7BF5] text-white text-base font-semibold rounded-lg 
+            hover:bg-blue-600 active:bg-blue-700 
+            transition-colors duration-200 
+            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 
+            disabled:bg-blue-200 disabled:cursor-not-allowed disabled:hover:bg-blue-200 
+            shadow-sm hover:shadow-md"
           >
             Fetch Network
           </button>
 
-          <button onClick={handleReset} className="w-full py-3 bg-gray-500 text-white text-lg font-medium rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+          <button
+            onClick={handleReset}
+            className="w-full py-3.5 bg-white text-gray-700 text-base font-semibold rounded-lg 
+            border border-gray-300 
+            hover:bg-gray-50 active:bg-gray-100 
+            transition-all duration-200 
+            focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2
+            shadow-sm hover:shadow-md"
+          >
             Reset
           </button>
         </div>

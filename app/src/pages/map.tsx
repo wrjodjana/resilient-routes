@@ -98,6 +98,7 @@ export const BaseMap = () => {
   const [networkWays, setNetworkWays] = useState<NetworkWay[]>([]);
   const [visualizationFilter, setVisualizationFilter] = useState<VisualizationFilter>({
     showWays: true,
+    isMonochrome: false,
     roadTypes: {
       motorway: true,
       trunk: true,
@@ -182,7 +183,7 @@ export const BaseMap = () => {
                 unclassified: "#666666",
               };
 
-              const roadColor = roadColors[way.tags.highway as keyof typeof roadColors] || "#FF4B4B";
+              const roadColor = visualizationFilter.isMonochrome ? "#000000" : roadColors[way.tags.highway as keyof typeof roadColors] || "#FF4B4B";
 
               return (
                 <Polyline key={way.id} positions={wayPoints as [number, number][]} color={roadColor} weight={4} opacity={1}>

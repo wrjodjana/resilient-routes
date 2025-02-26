@@ -32,6 +32,7 @@ export interface SidebarProps {
 
 export interface VisualizationFilter {
   showWays: boolean;
+  isMonochrome: boolean;
   roadTypes: {
     motorway: boolean;
     trunk: boolean;

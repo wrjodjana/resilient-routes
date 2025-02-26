@@ -255,17 +255,26 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
         </div>
         {error && <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">{error}</div>}
         <div className="mb-4 mt-8 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-lg font-bold mb-3 text-cyan font-figtree flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z"
-              />
-            </svg>
-            Road Types
-          </h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-cyan font-figtree flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z"
+                />
+              </svg>
+              Road Types
+            </h3>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Monochrome</span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" checked={visualizationFilter.isMonochrome} onChange={() => setVisualizationFilter((prev) => ({ ...prev, isMonochrome: !prev.isMonochrome }))} />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+          </div>
           <div className="space-y-3">
             {roadTypes.map(({ id, label, color }) => (
               <div key={id} className="flex items-center bg-white p-2 rounded-md border border-gray-200">
@@ -277,7 +286,13 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
                   className="w-4 h-4 mr-3 accent-[#4B7BF5] cursor-pointer"
                 />
                 <label htmlFor={id} className="flex items-center flex-1 cursor-pointer">
-                  <div className="w-5 h-5 mr-3 rounded" style={{ backgroundColor: color, border: "1px solid #ccc" }}></div>
+                  <div
+                    className="w-5 h-5 mr-3 rounded"
+                    style={{
+                      backgroundColor: visualizationFilter.isMonochrome ? "#000000" : color,
+                      border: "1px solid #ccc",
+                    }}
+                  ></div>
                   <span className="font-medium">{label}</span>
                 </label>
               </div>

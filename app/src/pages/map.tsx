@@ -198,32 +198,26 @@ export const BaseMap = () => {
               );
             })}
           {(visualizationFilter.viewMode === "bridges-only" || visualizationFilter.viewMode === "network-and-bridges") &&
-            networkNodes
-              .filter((node) => {
-                return node.tags?.bridge === "yes" || networkWays.some((way) => way.tags?.bridge === "yes" && way.nodes.includes(node.id));
-              })
-              .map((node) => {
+            networkWays
+              .filter((way) => way.tags?.bridge === "yes")
+              .map((way) => {
+                const wayPoints = way.nodes
+                  .map((nodeId) => {
+                    const node = networkNodes.find((n) => n.id === nodeId);
+                    return node ? [node.lat, node.lon] : null;
+                  })
+                  .filter((point) => point !== null);
+
                 return (
-                  <CircleMarker
-                    key={node.id}
-                    center={[node.lat, node.lon]}
-                    radius={7}
-                    pathOptions={{
-                      fillColor: "#ff3b3b",
-                      fillOpacity: 0.8,
-                      color: "#ffffff",
-                      weight: 2,
-                      opacity: 1,
-                    }}
-                  >
+                  <Polyline key={way.id} positions={wayPoints as [number, number][]} color="#8B008B" weight={8} opacity={1}>
                     <Popup>
-                      Bridge ID: {node.id}
+                      Bridge ID: {way.id}
                       <br />
-                      Name: {node.tags?.name || "Unnamed"}
+                      Name: {way.tags?.name || "Unnamed"}
                       <br />
-                      Type: {node.tags?.bridge_type || "Unknown"}
+                      Type: {way.tags?.bridge_type || "Unknown"}
                     </Popup>
-                  </CircleMarker>
+                  </Polyline>
                 );
               })}
         </MapContainer>

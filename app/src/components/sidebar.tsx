@@ -55,10 +55,8 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
         // Get all roads
         way["highway"~"^(motorway|trunk|primary|secondary|tertiary|residential|unclassified)$"]
           (${minLat},${minLng},${maxLat},${maxLng});
-        // Get all bridges
+        // Get all bridges (only ways/links now)
         way["bridge"="yes"]
-          (${minLat},${minLng},${maxLat},${maxLng});
-        node["bridge"="yes"]
           (${minLat},${minLng},${maxLat},${maxLng});
       );
       out body;

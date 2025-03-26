@@ -14,6 +14,8 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
   const [minLng, setMinLng] = useState<number | "">("");
   const [maxLng, setMaxLng] = useState<number | "">("");
 
+  const [earthquakeMagnitude, setEarthquakeMagnitude] = useState<number>(6.0);
+
   const validateCoordinates = (): boolean => {
     if (!minLat || !maxLat || !minLng || !maxLng) {
       setError("All coordinates are required");
@@ -339,6 +341,32 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
             ))}
           </div>
         </div>
+        {visualizationFilter.viewMode === "bridges-only" && (
+          <div className="mt-4 bg-white p-3 rounded-md border border-gray-200">
+            <label className="block mb-1.5 font-bold text-sm text-gray-700 font-figtree">Earthquake Magnitude</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min="4.0"
+                max="9.0"
+                step="0.1"
+                value={earthquakeMagnitude}
+                onChange={(e) => setEarthquakeMagnitude(Number(e.target.value))}
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#4B7BF5]"
+              />
+              <div className="w-16 px-2 py-1 bg-gray-50 border border-gray-200 rounded text-sm text-center font-medium">{earthquakeMagnitude.toFixed(1)}</div>
+            </div>
+            <div className="mt-2">
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Minor</span>
+                <span>Moderate</span>
+                <span>Major</span>
+              </div>
+              <div className="h-1.5 mt-1 bg-gradient-to-r from-green-400 via-yellow-400 to-red-500 rounded-full"></div>
+              <p className="mt-2 text-xs text-gray-500 italic">Simulates bridge vulnerability based on earthquake magnitude</p>
+            </div>
+          </div>
+        )}
         <div className="mt-8 flex flex-col gap-4">
           <button
             onClick={handleFetchNetwork}

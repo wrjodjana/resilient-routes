@@ -103,7 +103,7 @@ async def bridge_information(
 async def get_shakemap_info(event_id: str):
     try:
         url = f"https://earthquake.usgs.gov/earthquakes/eventpage/{event_id}/shakemap/intensity"
-        
+        print("test")
         async with async_playwright() as p:
             browser = await p.chromium.launch()
             page = await browser.new_page()

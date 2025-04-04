@@ -15,3 +15,11 @@ export interface NetworkWay {
     [key: string]: string;
   };
 }
+
+export interface BridgeData {
+  bridge_coordinates: {
+    latitude: number;
+    longitude: number;
+    name: string;
+  }[];
+}

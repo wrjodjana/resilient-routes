@@ -3,9 +3,9 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { API_URL } from "../config.ts";
 import L from "leaflet";
-import { BoundingBox, NetworkNode, NetworkWay, SidebarProps, VisualizationFilter } from "../types/sidebar.ts";
+import { BoundingBox, NetworkNode, NetworkWay, SidebarProps, VisualizationFilter, BridgeData } from "../types/sidebar.ts";
 
-export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetworkWays, visualizationFilter, setVisualizationFilter }: SidebarProps) => {
+export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetworkWays, visualizationFilter, setVisualizationFilter, setBridgeData }: SidebarProps) => {
   const [error, setError] = useState<string | null>(null);
   const [mapOpacity, setMapOpacity] = useState<number>(1);
 
@@ -57,9 +57,6 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
         // Get all roads
         way["highway"~"^(motorway|trunk|primary|secondary|tertiary|residential|unclassified)$"]
           (${minLat},${minLng},${maxLat},${maxLng});
-        // Get all bridges (only ways/links now)
-        way["bridge"="yes"]
-          (${minLat},${minLng},${maxLat},${maxLng});
       );
       out body;
       >;
@@ -97,6 +94,7 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
     setNetworkNodes([]);
     setNetworkWays([]);
     setBoundingBox(null);
+    setBridgeData(null);
 
     const drawnItems = (window as any).drawnItems;
     if (drawnItems) {
@@ -173,6 +171,137 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
     { id: "bridges-only", label: "Bridges Only", icon: "🌉" },
     { id: "network-and-bridges", label: "Network & Bridges", icon: "🗺️" },
   ] as const;
+
+  const fetchNearestEarthquake = async () => {
+    if (!boundingBox) {
+      alert("Please draw a bounding box first");
+      return;
+    }
+
+    try {
+      const centerLat = (boundingBox.northEast.lat + boundingBox.southWest.lat) / 2;
+      const centerLng = (boundingBox.northEast.lng + boundingBox.southWest.lng) / 2;
+
+      const endTime = new Date().toISOString().split(".")[0] + "Z";
+      const startTime = new Date(Date.now() - 50 * 365 * 24 * 60 * 60 * 1000).toISOString().split(".")[0] + "Z";
+
+      const minMag = earthquakeMagnitude;
+      const maxMag = earthquakeMagnitude + 1;
+
+      const earthquakeUrl = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${startTime}&endtime=${endTime}&latitude=${centerLat}&longitude=${centerLng}&maxradiuskm=1000&minmagnitude=${minMag}&maxmagnitude=${maxMag}&limit=1&eventtype=earthquake`;
+
+      console.log("Requesting URL:", earthquakeUrl);
+
+      const response = await fetch(earthquakeUrl);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+
+      if (data.features && data.features.length > 0) {
+        const nearestEarthquake = data.features[0];
+        const eventId = nearestEarthquake.id.split("/")?.pop() || nearestEarthquake.id;
+        const network = eventId.substring(0, 2); // Get network code (e.g., 'nc' from 'nc75103356')
+        const code = eventId.substring(2); // Get the actual code without network prefix
+        const updatedTimestamp = nearestEarthquake.properties.updated;
+
+        // First fetch the event details to get the ShakeMap product information
+        const shakemapInfoUrl = `http://localhost:8000/earthquake/shakemap-info/${eventId}`;
+        console.log("Processed event ID:", eventId);
+
+        console.log("Fetching ShakeMap info from:", shakemapInfoUrl);
+
+        const shakemapInfoResponse = await fetch(shakemapInfoUrl);
+        if (!shakemapInfoResponse.ok) {
+          throw new Error("Failed to fetch ShakeMap info");
+        }
+
+        const shakemapInfo = await shakemapInfoResponse.json();
+        const contributionTimestamp = shakemapInfo.contribution_timestamp;
+
+        // Now use this timestamp for the ShakeMap URL
+        const shakemapUrl = `https://earthquake.usgs.gov/product/shakemap/${code}/${network}/${contributionTimestamp}/download/info.json`;
+        console.log("ShakeMap URL:", shakemapUrl);
+
+        const shakemapResponse = await fetch(shakemapUrl);
+        if (shakemapResponse.ok) {
+          const shakemapData = await shakemapResponse.json();
+
+          // Get ground motion data from the output section
+          const groundMotions = shakemapData.output?.ground_motions;
+
+          console.log("Found earthquake with ground motion data:", {
+            id: eventId,
+            magnitude: nearestEarthquake.properties.mag,
+            location: nearestEarthquake.properties.place,
+            time: new Date(nearestEarthquake.properties.time).toLocaleString(),
+            depth: nearestEarthquake.geometry.coordinates[2],
+            latitude: nearestEarthquake.geometry.coordinates[1],
+            longitude: nearestEarthquake.geometry.coordinates[0],
+            // Ground motion parameters
+            PGA: groundMotions?.PGA && {
+              units: groundMotions.PGA.units,
+              max: groundMotions.PGA.max,
+              max_grid: groundMotions.PGA.max_grid,
+              bias: groundMotions.PGA.bias,
+            },
+            PGV: groundMotions?.PGV && {
+              units: groundMotions.PGV.units,
+              max: groundMotions.PGV.max,
+              max_grid: groundMotions.PGV.max_grid,
+              bias: groundMotions.PGV.bias,
+            },
+            MMI: groundMotions?.MMI && {
+              units: groundMotions.MMI.units,
+              max: groundMotions.MMI.max,
+              max_grid: groundMotions.MMI.max_grid,
+              bias: groundMotions.MMI.bias,
+            },
+            // Spectral Accelerations
+            SA03: groundMotions?.["SA(0.3)"] && {
+              units: groundMotions["SA(0.3)"].units,
+              max: groundMotions["SA(0.3)"].max,
+              max_grid: groundMotions["SA(0.3)"].max_grid,
+              bias: groundMotions["SA(0.3)"].bias,
+            },
+            SA10: groundMotions?.["SA(1.0)"] && {
+              units: groundMotions["SA(1.0)"].units,
+              max: groundMotions["SA(1.0)"].max,
+              max_grid: groundMotions["SA(1.0)"].max_grid,
+              bias: groundMotions["SA(1.0)"].bias,
+            },
+            SA30: groundMotions?.["SA(3.0)"] && {
+              units: groundMotions["SA(3.0)"].units,
+              max: groundMotions["SA(3.0)"].max,
+              max_grid: groundMotions["SA(3.0)"].max_grid,
+              bias: groundMotions["SA(3.0)"].bias,
+            },
+          });
+        } else {
+          console.log("ShakeMap data not available for this event");
+          // Still log basic earthquake info
+          console.log("Basic earthquake info:", {
+            id: eventId,
+            magnitude: nearestEarthquake.properties.mag,
+            location: nearestEarthquake.properties.place,
+            time: new Date(nearestEarthquake.properties.time).toLocaleString(),
+            depth: nearestEarthquake.geometry.coordinates[2],
+            latitude: nearestEarthquake.geometry.coordinates[1],
+            longitude: nearestEarthquake.geometry.coordinates[0],
+            mmi: nearestEarthquake.properties.mmi,
+            felt: nearestEarthquake.properties.felt,
+            tsunami: nearestEarthquake.properties.tsunami,
+          });
+        }
+      } else {
+        console.log(`No earthquakes found with magnitude between ${minMag} and ${maxMag}`);
+      }
+    } catch (error) {
+      console.error("Error fetching earthquake data:", error);
+    }
+  };
 
   return (
     <div className="w-1/4 p-4 shadow bg-white h-screen overflow-y-auto fixed right-0 top-0 z-50">
@@ -365,6 +494,9 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
               <div className="h-1.5 mt-1 bg-gradient-to-r from-green-400 via-yellow-400 to-red-500 rounded-full"></div>
               <p className="mt-2 text-xs text-gray-500 italic">Simulates bridge vulnerability based on earthquake magnitude</p>
             </div>
+            <button onClick={fetchNearestEarthquake} className="mt-4 w-full px-4 py-2 bg-[#4B7BF5] text-white rounded-md hover:bg-[#3D63C9] transition-colors">
+              Find Nearest Earthquake
+            </button>
           </div>
         )}
         <div className="mt-8 flex flex-col gap-4">

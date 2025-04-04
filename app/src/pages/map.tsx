@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Popup, Polyline, CircleMarker, Rectangle, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Popup, Polyline, CircleMarker, Rectangle, useMap, Marker, Tooltip } from "react-leaflet";
 import { Sidebar } from "../components/sidebar.tsx";
 import { BoundingBox, VisualizationFilter } from "../types/sidebar.ts";
 import "leaflet/dist/leaflet.css";
@@ -9,6 +9,16 @@ import "leaflet-draw/dist/leaflet.draw.css";
 import * as L from "leaflet";
 import "leaflet-draw";
 import axios from "axios";
+
+interface BridgeCoordinate {
+  latitude: number;
+  longitude: number;
+  name: string;
+}
+
+interface BridgeData {
+  bridge_coordinates: BridgeCoordinate[];
+}
 
 const BoundsUpdater = ({ boundingBox }: { boundingBox: BoundingBox | null }) => {
   const map = useMap();
@@ -110,16 +120,67 @@ export const BaseMap = () => {
     },
     viewMode: "network-and-bridges",
   });
+  const [bridgeData, setBridgeData] = useState<BridgeData | null>(null);
 
   useEffect(() => {
-    if (boundingBox) {
-      console.log("Bounding box updated:", boundingBox);
-    }
+    const fetchData = async () => {
+      if (boundingBox) {
+        try {
+          // Fetch bridge data
+          const bridgeResponse = await axios.get("http://localhost:8000/data/bridge-info/bridge_data", {
+            params: {
+              min_lat: boundingBox.southWest.lat,
+              max_lat: boundingBox.northEast.lat,
+              min_lng: boundingBox.southWest.lng,
+              max_lng: boundingBox.northEast.lng,
+            },
+          });
+          setBridgeData(bridgeResponse.data);
+
+          // Fetch network data
+          const query = `
+            [out:json][timeout:25];
+            (
+              way["highway"~"^(motorway|trunk|primary|secondary|tertiary|residential|unclassified)$"]
+                (${boundingBox.southWest.lat},${boundingBox.southWest.lng},${boundingBox.northEast.lat},${boundingBox.northEast.lng});
+            );
+            out body;
+            >;
+            out skel qt;
+          `;
+
+          const networkResponse = await axios.get("https://overpass-api.de/api/interpreter", {
+            params: { data: query },
+          });
+
+          if (networkResponse.data && networkResponse.data.elements) {
+            const ways = networkResponse.data.elements.filter((elem: any) => elem.type === "way");
+            const nodes = networkResponse.data.elements.filter((elem: any) => elem.type === "node");
+            setNetworkNodes(nodes);
+            setNetworkWays(ways);
+          }
+        } catch (error) {
+          if (axios.isAxiosError(error) && error.response) {
+            // Only set error for non-empty bridge data errors
+            if (error.response.status !== 400 || error.response.data.detail !== "No valid coordinates found in the dataset") {
+              console.error("Data fetch error:", error.response.data.detail);
+              setError(error.response.data.detail);
+            }
+          } else {
+            console.error("Failed to fetch data:", error);
+            setError("Failed to fetch data");
+          }
+        }
+      }
+    };
+
+    fetchData();
   }, [boundingBox]);
 
   const handleReset = () => {
     setError("");
     setBoundingBox(null);
+    setBridgeData(null);
 
     const drawnItems = (window as any).drawnItems;
     if (drawnItems) {
@@ -198,31 +259,38 @@ export const BaseMap = () => {
               );
             })}
           {(visualizationFilter.viewMode === "bridges-only" || visualizationFilter.viewMode === "network-and-bridges") &&
-            networkWays
-              .filter((way) => way.tags?.bridge === "yes")
-              .map((way) => {
-                const wayPoints = way.nodes
-                  .map((nodeId) => {
-                    const node = networkNodes.find((n) => n.id === nodeId);
-                    return node ? [node.lat, node.lon] : null;
-                  })
-                  .filter((point) => point !== null);
-
-                return (
-                  <Polyline key={way.id} positions={wayPoints as [number, number][]} color="#8B008B" weight={8} opacity={1}>
-                    <Popup>
-                      Bridge ID: {way.id}
-                      <br />
-                      Name: {way.tags?.name || "Unnamed"}
-                      <br />
-                      Type: {way.tags?.bridge_type || "Unknown"}
-                    </Popup>
-                  </Polyline>
-                );
-              })}
+            bridgeData?.bridge_coordinates.map((bridge, index) => (
+              <CircleMarker
+                key={index}
+                center={[bridge.latitude, bridge.longitude]}
+                radius={10}
+                pathOptions={{
+                  color: "#006400",
+                  fillColor: "#006400",
+                  fillOpacity: 1,
+                  weight: 1,
+                }}
+              >
+                <Popup>
+                  Bridge ID: {bridge.name}
+                  <br />
+                  Latitude: {bridge.latitude.toFixed(6)}
+                  <br />
+                  Longitude: {bridge.longitude.toFixed(6)}
+                </Popup>
+              </CircleMarker>
+            ))}
         </MapContainer>
       </div>
-      <Sidebar boundingBox={boundingBox} setBoundingBox={setBoundingBox} setNetworkNodes={setNetworkNodes} setNetworkWays={setNetworkWays} visualizationFilter={visualizationFilter} setVisualizationFilter={setVisualizationFilter} />
+      <Sidebar
+        boundingBox={boundingBox}
+        setBoundingBox={setBoundingBox}
+        setNetworkNodes={setNetworkNodes}
+        setNetworkWays={setNetworkWays}
+        visualizationFilter={visualizationFilter}
+        setVisualizationFilter={setVisualizationFilter}
+        setBridgeData={setBridgeData}
+      />
       {error && <div className="error-message">{error}</div>}
     </div>
   );

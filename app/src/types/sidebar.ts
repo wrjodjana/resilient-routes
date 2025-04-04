@@ -21,6 +21,14 @@ export interface NetworkWay {
   };
 }
 
+export interface BridgeData {
+  bridge_coordinates: {
+    latitude: number;
+    longitude: number;
+    name: string;
+  }[];
+}
+
 export interface SidebarProps {
   boundingBox: BoundingBox | null;
   setBoundingBox: (box: BoundingBox | null) => void;
@@ -28,6 +36,7 @@ export interface SidebarProps {
   setNetworkWays: (ways: NetworkWay[]) => void;
   visualizationFilter: VisualizationFilter;
   setVisualizationFilter: (filter: VisualizationFilter | ((prev: VisualizationFilter) => VisualizationFilter)) => void;
+  setBridgeData: (data: BridgeData | null) => void;
 }
 
 export interface VisualizationFilter {
@@ -43,4 +52,11 @@ export interface VisualizationFilter {
     unclassified: boolean;
   };
   viewMode: "network-only" | "bridges-only" | "network-and-bridges";
+  bridgeFilters?: {
+    minSpans?: number;
+    maxSpans?: number;
+    minSkewAngle?: number;
+    maxSkewAngle?: number;
+    classifications: string[];
+  };
 }

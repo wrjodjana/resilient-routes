@@ -155,8 +155,9 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
     { id: "residential", label: "Residential", color: "#999999" },
     { id: "unclassified", label: "Unclassified", color: "#666666" },
   ] as const;
+
   const handleRoadTypeChange = (roadType: keyof VisualizationFilter["roadTypes"]) => {
-    setVisualizationFilter((prev: VisualizationFilter): VisualizationFilter => {
+    setVisualizationFilter((prev: VisualizationFilter) => {
       const updatedRoadTypes = { ...prev.roadTypes };
       updatedRoadTypes[roadType] = !updatedRoadTypes[roadType];
       return {
@@ -203,14 +204,8 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
       if (data.features && data.features.length > 0) {
         const nearestEarthquake = data.features[0];
         const eventId = nearestEarthquake.id.split("/")?.pop() || nearestEarthquake.id;
-        const network = eventId.substring(0, 2); // Get network code (e.g., 'nc' from 'nc75103356')
-        const code = eventId.substring(2); // Get the actual code without network prefix
-        const updatedTimestamp = nearestEarthquake.properties.updated;
 
-        // First fetch the event details to get the ShakeMap product information
         const shakemapInfoUrl = `http://localhost:8000/earthquake/shakemap-info/${eventId}`;
-        console.log("Processed event ID:", eventId);
-
         console.log("Fetching ShakeMap info from:", shakemapInfoUrl);
 
         const shakemapInfoResponse = await fetch(shakemapInfoUrl);
@@ -219,17 +214,19 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
         }
 
         const shakemapInfo = await shakemapInfoResponse.json();
-        const contributionTimestamp = shakemapInfo.contribution_timestamp;
+        console.log("ShakeMap info:", shakemapInfo);
 
-        // Now use this timestamp for the ShakeMap URL
-        const shakemapUrl = `https://earthquake.usgs.gov/product/shakemap/${code}/${network}/${contributionTimestamp}/download/info.json`;
+        const code = shakemapInfo.event_code;
+        const network = shakemapInfo.network;
+        const timestamp = shakemapInfo.timestamp;
+
+        const shakemapUrl = `https://earthquake.usgs.gov/product/shakemap/${code}/${network}/${timestamp}/download/info.json`;
         console.log("ShakeMap URL:", shakemapUrl);
 
         const shakemapResponse = await fetch(shakemapUrl);
         if (shakemapResponse.ok) {
           const shakemapData = await shakemapResponse.json();
 
-          // Get ground motion data from the output section
           const groundMotions = shakemapData.output?.ground_motions;
 
           console.log("Found earthquake with ground motion data:", {
@@ -240,7 +237,7 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
             depth: nearestEarthquake.geometry.coordinates[2],
             latitude: nearestEarthquake.geometry.coordinates[1],
             longitude: nearestEarthquake.geometry.coordinates[0],
-            // Ground motion parameters
+
             PGA: groundMotions?.PGA && {
               units: groundMotions.PGA.units,
               max: groundMotions.PGA.max,
@@ -259,7 +256,7 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
               max_grid: groundMotions.MMI.max_grid,
               bias: groundMotions.MMI.bias,
             },
-            // Spectral Accelerations
+
             SA03: groundMotions?.["SA(0.3)"] && {
               units: groundMotions["SA(0.3)"].units,
               max: groundMotions["SA(0.3)"].max,
@@ -281,19 +278,7 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
           });
         } else {
           console.log("ShakeMap data not available for this event");
-          // Still log basic earthquake info
-          console.log("Basic earthquake info:", {
-            id: eventId,
-            magnitude: nearestEarthquake.properties.mag,
-            location: nearestEarthquake.properties.place,
-            time: new Date(nearestEarthquake.properties.time).toLocaleString(),
-            depth: nearestEarthquake.geometry.coordinates[2],
-            latitude: nearestEarthquake.geometry.coordinates[1],
-            longitude: nearestEarthquake.geometry.coordinates[0],
-            mmi: nearestEarthquake.properties.mmi,
-            felt: nearestEarthquake.properties.felt,
-            tsunami: nearestEarthquake.properties.tsunami,
-          });
+          console.log(nearestEarthquake.properties);
         }
       } else {
         console.log(`No earthquakes found with magnitude between ${minMag} and ${maxMag}`);
@@ -399,7 +384,7 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">Monochrome</span>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" checked={visualizationFilter.isMonochrome} onChange={() => setVisualizationFilter((prev) => ({ ...prev, isMonochrome: !prev.isMonochrome }))} />
+                <input type="checkbox" className="sr-only peer" checked={visualizationFilter.isMonochrome} onChange={() => setVisualizationFilter((prev: { isMonochrome: any }) => ({ ...prev, isMonochrome: !prev.isMonochrome }))} />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
               </label>
             </div>
@@ -457,7 +442,7 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
             {viewOptions.map((option) => (
               <button
                 key={option.id}
-                onClick={() => setVisualizationFilter((prev) => ({ ...prev, viewMode: option.id }))}
+                onClick={() => setVisualizationFilter((prev: any) => ({ ...prev, viewMode: option.id }))}
                 className={`
                   p-3 rounded-lg border transition-all duration-200
                   flex flex-col items-center justify-center gap-1

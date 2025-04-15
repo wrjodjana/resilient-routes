@@ -14,6 +14,9 @@ interface BridgeCoordinate {
   latitude: number;
   longitude: number;
   name: string;
+  structure_material: string;
+  structure_type: string;
+  year_built: string;
 }
 
 interface BridgeData {
@@ -273,6 +276,12 @@ export const BaseMap = () => {
               >
                 <Popup>
                   Bridge ID: {bridge.name}
+                  <br />
+                  Material: {bridge.structure_material}
+                  <br />
+                  Type: {bridge.structure_type}
+                  <br />
+                  Year Built: {bridge.year_built}
                   <br />
                   Latitude: {bridge.latitude.toFixed(6)}
                   <br />

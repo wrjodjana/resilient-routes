@@ -21,12 +21,17 @@ export interface NetworkWay {
   };
 }
 
+interface BridgeCoordinate {
+  latitude: number;
+  longitude: number;
+  name: string;
+  structure_material: string;
+  structure_type: string;
+  year_built: string;
+}
+
 export interface BridgeData {
-  bridge_coordinates: {
-    latitude: number;
-    longitude: number;
-    name: string;
-  }[];
+  bridge_coordinates: BridgeCoordinate[];
 }
 
 export interface SidebarProps {
@@ -35,7 +40,7 @@ export interface SidebarProps {
   setNetworkNodes: (nodes: NetworkNode[]) => void;
   setNetworkWays: (ways: NetworkWay[]) => void;
   visualizationFilter: VisualizationFilter;
-  setVisualizationFilter: (filter: VisualizationFilter | ((prev: VisualizationFilter) => VisualizationFilter)) => void;
+  setVisualizationFilter: (filter: VisualizationFilter) => void;
   setBridgeData: (data: BridgeData | null) => void;
 }
 

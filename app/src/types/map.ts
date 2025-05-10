@@ -21,5 +21,12 @@ export interface BridgeData {
     latitude: number;
     longitude: number;
     name: string;
+    year_built: string;
+    damage_probabilities?: {
+      slight: number;
+      moderate: number;
+      extensive: number;
+      complete: number;
+    };
   }[];
 }

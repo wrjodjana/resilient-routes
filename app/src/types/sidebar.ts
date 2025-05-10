@@ -17,7 +17,8 @@ export interface NetworkWay {
   id: number;
   nodes: number[];
   tags?: {
-    [key: string]: string;
+    highway?: string;
+    name?: string;
   };
 }
 
@@ -25,9 +26,13 @@ interface BridgeCoordinate {
   latitude: number;
   longitude: number;
   name: string;
-  structure_material: string;
-  structure_type: string;
   year_built: string;
+  damage_probabilities?: {
+    slight: number;
+    moderate: number;
+    extensive: number;
+    complete: number;
+  };
 }
 
 export interface BridgeData {
@@ -40,7 +45,7 @@ export interface SidebarProps {
   setNetworkNodes: (nodes: NetworkNode[]) => void;
   setNetworkWays: (ways: NetworkWay[]) => void;
   visualizationFilter: VisualizationFilter;
-  setVisualizationFilter: (filter: VisualizationFilter) => void;
+  setVisualizationFilter: (filter: VisualizationFilter | ((prev: VisualizationFilter) => VisualizationFilter)) => void;
   setBridgeData: (data: BridgeData | null) => void;
 }
 
@@ -57,11 +62,4 @@ export interface VisualizationFilter {
     unclassified: boolean;
   };
   viewMode: "network-only" | "bridges-only" | "network-and-bridges";
-  bridgeFilters?: {
-    minSpans?: number;
-    maxSpans?: number;
-    minSkewAngle?: number;
-    maxSkewAngle?: number;
-    classifications: string[];
-  };
 }

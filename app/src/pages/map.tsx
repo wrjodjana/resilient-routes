@@ -3,25 +3,12 @@ import { MapContainer, TileLayer, Popup, Polyline, CircleMarker, Rectangle, useM
 import { Sidebar } from "../components/sidebar.tsx";
 import { BoundingBox, VisualizationFilter } from "../types/sidebar.ts";
 import "leaflet/dist/leaflet.css";
-import { NetworkNode, NetworkWay } from "../types/map.ts";
+import { NetworkNode, NetworkWay, BridgeData } from "../types/map.ts";
 import { API_URL } from "../config.ts";
 import "leaflet-draw/dist/leaflet.draw.css";
 import * as L from "leaflet";
 import "leaflet-draw";
 import axios from "axios";
-
-interface BridgeCoordinate {
-  latitude: number;
-  longitude: number;
-  name: string;
-  structure_material: string;
-  structure_type: string;
-  year_built: string;
-}
-
-interface BridgeData {
-  bridge_coordinates: BridgeCoordinate[];
-}
 
 const BoundsUpdater = ({ boundingBox }: { boundingBox: BoundingBox | null }) => {
   const map = useMap();
@@ -125,65 +112,12 @@ export const BaseMap = () => {
   });
   const [bridgeData, setBridgeData] = useState<BridgeData | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (boundingBox) {
-        try {
-          // Fetch bridge data
-          const bridgeResponse = await axios.get("http://localhost:8000/data/bridge-info/bridge_data", {
-            params: {
-              min_lat: boundingBox.southWest.lat,
-              max_lat: boundingBox.northEast.lat,
-              min_lng: boundingBox.southWest.lng,
-              max_lng: boundingBox.northEast.lng,
-            },
-          });
-          setBridgeData(bridgeResponse.data);
-
-          // Fetch network data
-          const query = `
-            [out:json][timeout:25];
-            (
-              way["highway"~"^(motorway|trunk|primary|secondary|tertiary|residential|unclassified)$"]
-                (${boundingBox.southWest.lat},${boundingBox.southWest.lng},${boundingBox.northEast.lat},${boundingBox.northEast.lng});
-            );
-            out body;
-            >;
-            out skel qt;
-          `;
-
-          const networkResponse = await axios.get("https://overpass-api.de/api/interpreter", {
-            params: { data: query },
-          });
-
-          if (networkResponse.data && networkResponse.data.elements) {
-            const ways = networkResponse.data.elements.filter((elem: any) => elem.type === "way");
-            const nodes = networkResponse.data.elements.filter((elem: any) => elem.type === "node");
-            setNetworkNodes(nodes);
-            setNetworkWays(ways);
-          }
-        } catch (error) {
-          if (axios.isAxiosError(error) && error.response) {
-            // Only set error for non-empty bridge data errors
-            if (error.response.status !== 400 || error.response.data.detail !== "No valid coordinates found in the dataset") {
-              console.error("Data fetch error:", error.response.data.detail);
-              setError(error.response.data.detail);
-            }
-          } else {
-            console.error("Failed to fetch data:", error);
-            setError("Failed to fetch data");
-          }
-        }
-      }
-    };
-
-    fetchData();
-  }, [boundingBox]);
-
   const handleReset = () => {
     setError("");
     setBoundingBox(null);
     setBridgeData(null);
+    setNetworkNodes([]);
+    setNetworkWays([]);
 
     const drawnItems = (window as any).drawnItems;
     if (drawnItems) {
@@ -275,17 +209,15 @@ export const BaseMap = () => {
                 }}
               >
                 <Popup>
-                  Bridge ID: {bridge.name}
-                  <br />
-                  Material: {bridge.structure_material}
-                  <br />
-                  Type: {bridge.structure_type}
-                  <br />
-                  Year Built: {bridge.year_built}
-                  <br />
-                  Latitude: {bridge.latitude.toFixed(6)}
-                  <br />
-                  Longitude: {bridge.longitude.toFixed(6)}
+                  <div>
+                    Bridge ID: {bridge.name}
+                    <br />
+                    Year Built: {bridge.year_built}
+                    <br />
+                    Location: {bridge.latitude.toFixed(6)}, {bridge.longitude.toFixed(6)}
+                    <br />
+                    {bridge.damage_probabilities && <>Failure Probability: {(bridge.damage_probabilities.extensive * 100).toFixed(1)}%</>}
+                  </div>
                 </Popup>
               </CircleMarker>
             ))}

@@ -13,8 +13,8 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
   const [maxLat, setMaxLat] = useState<number | "">("");
   const [minLng, setMinLng] = useState<number | "">("");
   const [maxLng, setMaxLng] = useState<number | "">("");
-
   const [earthquakeMagnitude, setEarthquakeMagnitude] = useState<number>(6.0);
+  const [seismicAnalysisData, setSeismicAnalysisData] = useState<any>(null);
 
   const validateCoordinates = (): boolean => {
     if (!minLat || !maxLat || !minLng || !maxLng) {
@@ -51,37 +51,40 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
       return;
     }
 
-    const query = `
-      [out:json][timeout:25];
-      (
-        // Get all roads
-        way["highway"~"^(motorway|trunk|primary|secondary|tertiary|residential|unclassified)$"]
-          (${minLat},${minLng},${maxLat},${maxLng});
-      );
-      out body;
-      >;
-      out skel qt;
-    `;
-
     try {
-      const response = await axios.get("https://overpass-api.de/api/interpreter", {
-        params: { data: query },
-      });
-
       setBoundingBox({
         southWest: { lat: Number(minLat), lng: Number(minLng) },
         northEast: { lat: Number(maxLat), lng: Number(maxLng) },
       });
 
-      if (response.data && response.data.elements) {
-        const ways = response.data.elements.filter((elem: any) => elem.type === "way");
-        const nodes = response.data.elements.filter((elem: any) => elem.type === "node");
+      const query = `
+        [out:json][timeout:25];
+        (
+          way["highway"~"^(motorway|trunk|primary|secondary|tertiary|residential|unclassified)$"]
+            (${minLat},${minLng},${maxLat},${maxLng});
+        );
+        out body;
+        >;
+        out skel qt;
+      `;
 
+      const networkResponse = await axios.get("https://overpass-api.de/api/interpreter", {
+        params: { data: query },
+      });
+
+      if (networkResponse.data && networkResponse.data.elements) {
+        const ways = networkResponse.data.elements.filter((elem: any) => elem.type === "way");
+        const nodes = networkResponse.data.elements.filter((elem: any) => elem.type === "node");
         setNetworkNodes(nodes);
         setNetworkWays(ways);
       }
     } catch (error) {
       console.error("Failed to fetch network data:", error);
+      if (axios.isAxiosError(error)) {
+        setError(error.response?.data?.detail || "Failed to fetch network data");
+      } else {
+        setError("Failed to fetch network data");
+      }
     }
   };
 
@@ -157,14 +160,20 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
   ] as const;
 
   const handleRoadTypeChange = (roadType: keyof VisualizationFilter["roadTypes"]) => {
-    setVisualizationFilter((prev: VisualizationFilter) => {
-      const updatedRoadTypes = { ...prev.roadTypes };
-      updatedRoadTypes[roadType] = !updatedRoadTypes[roadType];
-      return {
-        ...prev,
-        roadTypes: updatedRoadTypes,
-      };
-    });
+    setVisualizationFilter((prev) => ({
+      ...prev,
+      roadTypes: {
+        ...prev.roadTypes,
+        [roadType]: !prev.roadTypes[roadType],
+      },
+    }));
+  };
+
+  const handleMonochromeChange = () => {
+    setVisualizationFilter((prev) => ({
+      ...prev,
+      isMonochrome: !prev.isMonochrome,
+    }));
   };
 
   const viewOptions = [
@@ -173,118 +182,45 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
     { id: "network-and-bridges", label: "Network & Bridges", icon: "🗺️" },
   ] as const;
 
-  const fetchNearestEarthquake = async () => {
+  const handleViewModeChange = (mode: VisualizationFilter["viewMode"]) => {
+    setVisualizationFilter((prev) => ({
+      ...prev,
+      viewMode: mode,
+    }));
+  };
+
+  const fetchSeismicAnalysis = async () => {
     if (!boundingBox) {
       alert("Please draw a bounding box first");
       return;
     }
 
     try {
-      const centerLat = (boundingBox.northEast.lat + boundingBox.southWest.lat) / 2;
-      const centerLng = (boundingBox.northEast.lng + boundingBox.southWest.lng) / 2;
+      const response = await axios.get(`http://localhost:8000/data/combined-info/bridge_data`, {
+        params: {
+          min_lat: boundingBox.southWest.lat,
+          max_lat: boundingBox.northEast.lat,
+          min_lng: boundingBox.southWest.lng,
+          max_lng: boundingBox.northEast.lng,
+          user_magnitude: earthquakeMagnitude,
+          perform_seismic_analysis: true,
+        },
+      });
 
-      const endTime = new Date().toISOString().split(".")[0] + "Z";
-      const startTime = new Date(Date.now() - 50 * 365 * 24 * 60 * 60 * 1000).toISOString().split(".")[0] + "Z";
+      setSeismicAnalysisData(response.data.earthquake);
 
-      const minMag = earthquakeMagnitude;
-      const maxMag = earthquakeMagnitude + 1;
-
-      const earthquakeUrl = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${startTime}&endtime=${endTime}&latitude=${centerLat}&longitude=${centerLng}&maxradiuskm=1000&minmagnitude=${minMag}&maxmagnitude=${maxMag}&limit=1&eventtype=earthquake`;
-
-      console.log("Requesting URL:", earthquakeUrl);
-
-      const response = await fetch(earthquakeUrl);
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error response:", errorText);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-
-      if (data.features && data.features.length > 0) {
-        const nearestEarthquake = data.features[0];
-        const eventId = nearestEarthquake.id.split("/")?.pop() || nearestEarthquake.id;
-
-        const shakemapInfoUrl = `http://localhost:8000/earthquake/shakemap-info/${eventId}`;
-        console.log("Fetching ShakeMap info from:", shakemapInfoUrl);
-
-        const shakemapInfoResponse = await fetch(shakemapInfoUrl);
-        if (!shakemapInfoResponse.ok) {
-          throw new Error("Failed to fetch ShakeMap info");
-        }
-
-        const shakemapInfo = await shakemapInfoResponse.json();
-        console.log("ShakeMap info:", shakemapInfo);
-
-        const code = shakemapInfo.event_code;
-        const network = shakemapInfo.network;
-        const timestamp = shakemapInfo.timestamp;
-
-        const shakemapUrl = `https://earthquake.usgs.gov/product/shakemap/${code}/${network}/${timestamp}/download/info.json`;
-        console.log("ShakeMap URL:", shakemapUrl);
-
-        const shakemapResponse = await fetch(shakemapUrl);
-        if (shakemapResponse.ok) {
-          const shakemapData = await shakemapResponse.json();
-
-          const groundMotions = shakemapData.output?.ground_motions;
-
-          console.log("Found earthquake with ground motion data:", {
-            id: eventId,
-            magnitude: nearestEarthquake.properties.mag,
-            location: nearestEarthquake.properties.place,
-            time: new Date(nearestEarthquake.properties.time).toLocaleString(),
-            depth: nearestEarthquake.geometry.coordinates[2],
-            latitude: nearestEarthquake.geometry.coordinates[1],
-            longitude: nearestEarthquake.geometry.coordinates[0],
-
-            PGA: groundMotions?.PGA && {
-              units: groundMotions.PGA.units,
-              max: groundMotions.PGA.max,
-              max_grid: groundMotions.PGA.max_grid,
-              bias: groundMotions.PGA.bias,
-            },
-            PGV: groundMotions?.PGV && {
-              units: groundMotions.PGV.units,
-              max: groundMotions.PGV.max,
-              max_grid: groundMotions.PGV.max_grid,
-              bias: groundMotions.PGV.bias,
-            },
-            MMI: groundMotions?.MMI && {
-              units: groundMotions.MMI.units,
-              max: groundMotions.MMI.max,
-              max_grid: groundMotions.MMI.max_grid,
-              bias: groundMotions.MMI.bias,
-            },
-
-            SA03: groundMotions?.["SA(0.3)"] && {
-              units: groundMotions["SA(0.3)"].units,
-              max: groundMotions["SA(0.3)"].max,
-              max_grid: groundMotions["SA(0.3)"].max_grid,
-              bias: groundMotions["SA(0.3)"].bias,
-            },
-            SA10: groundMotions?.["SA(1.0)"] && {
-              units: groundMotions["SA(1.0)"].units,
-              max: groundMotions["SA(1.0)"].max,
-              max_grid: groundMotions["SA(1.0)"].max_grid,
-              bias: groundMotions["SA(1.0)"].bias,
-            },
-            SA30: groundMotions?.["SA(3.0)"] && {
-              units: groundMotions["SA(3.0)"].units,
-              max: groundMotions["SA(3.0)"].max,
-              max_grid: groundMotions["SA(3.0)"].max_grid,
-              bias: groundMotions["SA(3.0)"].bias,
-            },
-          });
-        } else {
-          console.log("ShakeMap data not available for this event");
-          console.log(nearestEarthquake.properties);
-        }
-      } else {
-        console.log(`No earthquakes found with magnitude between ${minMag} and ${maxMag}`);
+      if (response.data.bridges) {
+        setBridgeData({
+          bridge_coordinates: response.data.bridges,
+        });
       }
     } catch (error) {
-      console.error("Error fetching earthquake data:", error);
+      console.error("Error fetching seismic analysis:", error);
+      if (axios.isAxiosError(error)) {
+        setError(error.response?.data?.detail || "Failed to fetch seismic analysis");
+      } else {
+        setError("Failed to fetch seismic analysis");
+      }
     }
   };
 
@@ -384,7 +320,7 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">Monochrome</span>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" checked={visualizationFilter.isMonochrome} onChange={() => setVisualizationFilter((prev: { isMonochrome: any }) => ({ ...prev, isMonochrome: !prev.isMonochrome }))} />
+                <input type="checkbox" className="sr-only peer" checked={visualizationFilter.isMonochrome} onChange={handleMonochromeChange} />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
               </label>
             </div>
@@ -442,7 +378,7 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
             {viewOptions.map((option) => (
               <button
                 key={option.id}
-                onClick={() => setVisualizationFilter((prev: any) => ({ ...prev, viewMode: option.id }))}
+                onClick={() => handleViewModeChange(option.id as VisualizationFilter["viewMode"])}
                 className={`
                   p-3 rounded-lg border transition-all duration-200
                   flex flex-col items-center justify-center gap-1
@@ -455,33 +391,65 @@ export const Sidebar = ({ boundingBox, setBoundingBox, setNetworkNodes, setNetwo
             ))}
           </div>
         </div>
-        {visualizationFilter.viewMode === "bridges-only" && (
-          <div className="mt-4 bg-white p-3 rounded-md border border-gray-200">
-            <label className="block mb-1.5 font-bold text-sm text-gray-700 font-figtree">Earthquake Magnitude</label>
-            <div className="flex items-center gap-3">
-              <input
-                type="range"
-                min="4.0"
-                max="9.0"
-                step="0.1"
-                value={earthquakeMagnitude}
-                onChange={(e) => setEarthquakeMagnitude(Number(e.target.value))}
-                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#4B7BF5]"
-              />
-              <div className="w-16 px-2 py-1 bg-gray-50 border border-gray-200 rounded text-sm text-center font-medium">{earthquakeMagnitude.toFixed(1)}</div>
-            </div>
-            <div className="mt-2">
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>Minor</span>
-                <span>Moderate</span>
-                <span>Major</span>
+        {visualizationFilter.viewMode !== "network-only" && (
+          <div className="mb-4 mt-8 p-4 bg-gray-50 rounded-lg">
+            <h3 className="text-lg font-bold mb-3 text-cyan font-figtree flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Seismic Analysis
+            </h3>
+            <div className="bg-white p-4 rounded-md border border-gray-200">
+              <label className="block mb-2 font-bold text-sm text-gray-700 font-figtree">
+                Earthquake Magnitude (M<sub>w</sub>)
+              </label>
+              <div className="flex items-center gap-3 mb-4">
+                <input
+                  type="range"
+                  min="4.0"
+                  max="9.0"
+                  step="0.1"
+                  value={earthquakeMagnitude}
+                  onChange={(e) => setEarthquakeMagnitude(Number(e.target.value))}
+                  className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#4B7BF5]"
+                />
+                <div className="w-16 px-2 py-1 bg-gray-50 border border-gray-200 rounded text-sm text-center font-medium">{earthquakeMagnitude.toFixed(1)}</div>
               </div>
-              <div className="h-1.5 mt-1 bg-gradient-to-r from-green-400 via-yellow-400 to-red-500 rounded-full"></div>
-              <p className="mt-2 text-xs text-gray-500 italic">Simulates bridge vulnerability based on earthquake magnitude</p>
+              <div className="mb-4">
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Minor (4.0)</span>
+                  <span>Moderate (6.0)</span>
+                  <span>Major (8.0+)</span>
+                </div>
+                <div className="h-1.5 mt-1 bg-gradient-to-r from-green-400 via-yellow-400 to-red-500 rounded-full"></div>
+              </div>
+
+              <button
+                onClick={fetchSeismicAnalysis}
+                disabled={!boundingBox}
+                className="w-full px-4 py-3 bg-[#4B7BF5] text-white rounded-md hover:bg-[#3D63C9] transition-colors
+                  text-base font-semibold flex items-center justify-center gap-2
+                  disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Run Seismic Analysis
+              </button>
+
+              {error && <div className="mt-3 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">{error}</div>}
+
+              {seismicAnalysisData && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                  <h4 className="font-bold text-sm text-blue-800 mb-2">Analysis Results</h4>
+                  <div className="text-sm text-blue-700">
+                    <p>Earthquake Location: {seismicAnalysisData.location}</p>
+                    <p>Magnitude: {seismicAnalysisData.actual_magnitude.toFixed(1)}</p>
+                    <p>Depth: {seismicAnalysisData.depth.toFixed(1)} km</p>
+                  </div>
+                </div>
+              )}
             </div>
-            <button onClick={fetchNearestEarthquake} className="mt-4 w-full px-4 py-2 bg-[#4B7BF5] text-white rounded-md hover:bg-[#3D63C9] transition-colors">
-              Find Nearest Earthquake
-            </button>
           </div>
         )}
         <div className="mt-8 flex flex-col gap-4">

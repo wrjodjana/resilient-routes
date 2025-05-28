@@ -47,6 +47,12 @@ export interface SidebarProps {
   visualizationFilter: VisualizationFilter;
   setVisualizationFilter: (filter: VisualizationFilter | ((prev: VisualizationFilter) => VisualizationFilter)) => void;
   setBridgeData: (data: BridgeData | null) => void;
+  networkWays: NetworkWay[];
+  networkNodes: NetworkNode[];
+  metaNetwork: { nodes: { id: number; lat: number; lon: number }[]; edges: { source: number; target: number }[] };
+  setMetaNetwork: (network: { nodes: { id: number; lat: number; lon: number }[]; edges: { source: number; target: number }[] }) => void;
+  isCollapsed: boolean;
+  setIsCollapsed: (collapsed: boolean) => void;
 }
 
 export interface VisualizationFilter {
@@ -61,5 +67,5 @@ export interface VisualizationFilter {
     residential: boolean;
     unclassified: boolean;
   };
-  viewMode: "network-only" | "bridges-only" | "network-and-bridges";
+  viewMode: "network-only" | "bridges-only" | "network-and-bridges" | null;
 }

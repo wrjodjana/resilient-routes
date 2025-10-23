@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { RectangleManager } from "@/lib/rectangle";
 import { Coordinates } from "@/lib/types";
-import { fetch_roads } from "@/lib/network/osm";
+import { fetch_roads, fetch_intersections } from "@/lib/network/osm";
 import { RenderRoads } from "@/lib/network/roads";
 import { RenderBridges } from "@/lib/network/bridges";
 import { RenderEarthquakes } from "@/lib/network/earthquakes";
@@ -47,12 +47,14 @@ export default function Sidebar({ map }: MapProps) {
 
     try {
       const road_data = await fetch_roads(selected_coords);
+      const intersection_data = await fetch_intersections(selected_coords);
 
       if (!road_renderer_ref.current) {
         road_renderer_ref.current = new RenderRoads(map);
       }
 
       road_renderer_ref.current.draw_roads(road_data.elements);
+      road_renderer_ref.current.draw_intersections(intersection_data.elements);
       set_show_road_legend(true);
     } catch (error) {
       console.error("Failed to fetch roads.");
@@ -114,7 +116,7 @@ export default function Sidebar({ map }: MapProps) {
 
   const handle_reset = () => {
     if (road_renderer_ref.current) {
-      road_renderer_ref.current.clear_roads();
+      road_renderer_ref.current.clear_all();
     }
     if (bridge_renderer_ref.current) {
       bridge_renderer_ref.current.clear_bridges();

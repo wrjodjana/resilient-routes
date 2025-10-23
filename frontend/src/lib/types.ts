@@ -29,6 +29,13 @@ export interface Roads {
   elements: RoadElements[];
 }
 
+export interface Intersection {
+  type: string;
+  id: number;
+  lat: number;
+  lon: number;
+}
+
 export interface Bridge {
   lat: number;
   lng: number;

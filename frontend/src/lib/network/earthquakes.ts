@@ -1,5 +1,6 @@
 import { Coordinates, EarthquakeElements } from "../types";
-import { fetch_earthquakes } from "./usgs";
+
+const PYTHON_API = "http://localhost:8000";
 
 export class RenderEarthquakes {
   private map: google.maps.Map;
@@ -10,10 +11,27 @@ export class RenderEarthquakes {
 
   async get_earthquakes(coords: Coordinates): Promise<EarthquakeElements[]> {
     try {
-      const earthquake_data = await fetch_earthquakes(coords);
-      return earthquake_data.features;
+      const response = await fetch(`${PYTHON_API}/api/earthquakes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(coords),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch earthquakes from API");
+      }
+
+      const earthquake_data = await response.json();
+
+      if (!earthquake_data) {
+        console.error("Found no earthquakes.");
+      }
+
+      return earthquake_data;
     } catch (error) {
-      console.error("Failed to load earthquakes.");
+      console.error("Failed to load earthquakes:", error);
       throw error;
     }
   }

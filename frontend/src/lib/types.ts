@@ -62,3 +62,28 @@ export interface EarthquakeElements {
 export interface Earthquake {
   features: EarthquakeElements[];
 }
+
+export interface ShakemapData {
+  id: string;
+  actual_magnitude: number;
+  location: string;
+  time: number;
+  depth: number;
+  latitude: number;
+  longitude: number;
+  vs30: number;
+  ground_motions: {
+    PGA?: GroundMotion;
+    PGV?: GroundMotion;
+    MMI?: GroundMotion;
+    SA03?: GroundMotion;
+    SA10?: GroundMotion;
+  };
+}
+
+interface GroundMotion {
+  units: string;
+  max: number;
+  max_grid: number;
+  bias: number;
+}

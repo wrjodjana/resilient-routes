@@ -8,6 +8,7 @@ import { RenderRoads } from "@/lib/network/roads";
 import { RenderBridges } from "@/lib/network/bridges";
 import { RenderEarthquakes } from "@/lib/network/earthquakes";
 import { MapProps } from "@/lib/types";
+import { fetch_shakemap } from "@/lib/network/shakemap";
 import Legend from "./legend";
 
 export default function Sidebar({ map }: MapProps) {
@@ -20,6 +21,8 @@ export default function Sidebar({ map }: MapProps) {
   const [show_road_legend, set_show_road_legend] = useState(false);
   const [is_drawing_mode, set_is_drawing_mode] = useState(false);
   const [is_loading, set_is_loading] = useState(false);
+
+  const [shakemap_data, set_shakemap_data] = useState<any>(null);
 
   const handle_select_location = async () => {
     if (!map) {
@@ -66,14 +69,49 @@ export default function Sidebar({ map }: MapProps) {
   const display_bridges = async () => {
     if (!selected_coords || !map) return;
 
+    set_is_loading(true);
+
     try {
       if (!bridge_renderer_ref.current) {
         bridge_renderer_ref.current = new RenderBridges(map);
-        await bridge_renderer_ref.current.load_bridges();
       }
-      bridge_renderer_ref.current.draw_bridges(selected_coords);
+
+      await bridge_renderer_ref.current.draw_bridges(selected_coords);
     } catch (error) {
       console.error("Failed to load bridges.");
+    } finally {
+      set_is_loading(false);
+    }
+  };
+
+  const display_bridge_failures = async () => {
+    if (!shakemap_data) {
+      alert("Please fetch earthquakes first!");
+      return;
+    }
+
+    const bridges = bridge_renderer_ref.current?.get_bridges_data();
+
+    if (!bridges || bridges.length === 0) {
+      alert("Please fetch bridges first!");
+      return;
+    }
+
+    set_is_loading(true);
+
+    try {
+      const failures_response = await fetch(`http://localhost:8000/api/bridge_failures`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shakemap_data, bridges }),
+      });
+
+      const failures = await failures_response.json();
+      console.log(failures);
+    } catch (error) {
+      console.error("Failed to calculate bridge failures:", error);
+    } finally {
+      set_is_loading(false);
     }
   };
 
@@ -87,8 +125,11 @@ export default function Sidebar({ map }: MapProps) {
         earthquake_renderer_ref.current = new RenderEarthquakes(map);
       }
 
-      const quakes = await earthquake_renderer_ref.current.get_earthquakes(selected_coords);
-      console.log("Earthquakes:", quakes);
+      const earthquake = await earthquake_renderer_ref.current.get_earthquakes(selected_coords);
+      console.log(earthquake);
+      const shakemap = await fetch_shakemap(earthquake);
+      console.log(shakemap);
+      set_shakemap_data(shakemap);
     } catch (error) {
       console.error("Failed to load earthquakes.");
     } finally {
@@ -106,6 +147,10 @@ export default function Sidebar({ map }: MapProps) {
 
   const handle_fetch_earthquakes = () => {
     display_earthquakes();
+  };
+
+  const handle_fetch_bridge_failures = () => {
+    display_bridge_failures();
   };
 
   const handle_toggle_monochrome = () => {
@@ -127,6 +172,7 @@ export default function Sidebar({ map }: MapProps) {
     set_show_road_legend(false);
     set_selected_coords(null);
     set_is_drawing_mode(false);
+    set_shakemap_data(null);
   };
 
   return (
@@ -155,6 +201,9 @@ export default function Sidebar({ map }: MapProps) {
       </button>
       <button onClick={handle_fetch_earthquakes} style={{ backgroundColor: "white", color: "black" }}>
         Fetch Earthquake
+      </button>
+      <button onClick={handle_fetch_bridge_failures} style={{ backgroundColor: "white", color: "black" }}>
+        Fetch Bridge Failures
       </button>
       <button onClick={handle_reset} style={{ backgroundColor: "white", color: "black" }}>
         Reset

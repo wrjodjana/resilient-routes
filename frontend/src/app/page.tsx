@@ -17,7 +17,7 @@ export default function Home() {
 
       if (map_ref.current) {
         const new_map = new Map(map_ref.current, {
-          center: { lat: 37.3387, lng: -121.88531 },
+          center: { lat: 35.6205, lng: -117.6718 },
           zoom: 12,
           colorScheme: ColorScheme.LIGHT,
           mapTypeControlOptions: {

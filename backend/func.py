@@ -1,7 +1,7 @@
 import numpy as np
 
 """
-Function to calculate GMPE using a specific magnitude (not needed now)
+Function to calculate GMPE using a specific magnitude
 """
 
 def cal_GK15(M, R, VS30, Bdepth, F, Q_0, flag='m'):

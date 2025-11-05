@@ -1,13 +1,18 @@
+import sys
+from concurrent.futures import ThreadPoolExecutor
+
 from classes import Coordinates
 from func import cal_GK15
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from playwright.async_api import async_playwright
+from playwright.sync_api import sync_playwright
 from scipy.stats import norm
 import pandas as pd
 import numpy as np
 import re
 import httpx
+import math
+import asyncio
 
 app = FastAPI()
 
@@ -18,6 +23,9 @@ app.add_middleware(
   allow_methods=["*"],
   allow_headers=["*"],
 )
+
+# Thread pool for Playwright
+executor = ThreadPoolExecutor(max_workers=3)
 
 USGS_API = "https://earthquake.usgs.gov/fdsnws/event/1/query"
 
@@ -46,37 +54,50 @@ async def fetch_earthquakes(coords: Coordinates):
     data = resp.json()
     return data['features'][0]
 
-@app.get("/api/shakemap")
-async def fetch_shakemap(event_id: str):
+def fetch_shakemap_sync(event_id: str):
+  """Synchronous function to fetch shakemap using Playwright"""
   event_url = f"https://earthquake.usgs.gov/earthquakes/eventpage/{event_id}/shakemap/intensity"
 
-  async with async_playwright() as p:
-    browser = await p.chromium.launch()
-    page = await browser.new_page()
+  with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True)
+    page = browser.new_page()
 
-    await page.goto(event_url)
-    await page.wait_for_load_state('networkidle')
+    page.goto(event_url)
+    page.wait_for_load_state('networkidle')
 
-    content = await page.content()
-    await browser.close()
+    content = page.content()
+    browser.close()
 
     pattern = r"product/shakemap/([^/]+)/([^/]+)/(\d+)/download/info.json"
     match = re.search(pattern, content)
+
+    if not match:
+      raise HTTPException(status_code=404, detail="Shakemap pattern not found")
 
     event_code = match.group(1)
     network = match.group(2)
     timestamp = match.group(3)
             
     shakemap_url = f"https://earthquake.usgs.gov/product/shakemap/{event_code}/{network}/{timestamp}/download/info.json"
-            
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.get(shakemap_url)
+    print(shakemap_url)
+    
+    return shakemap_url
 
-        if resp.status_code != 200:
-          raise HTTPException(status_code=500, detail="Failed to fetch shakemap data.")
+@app.get("/api/shakemap")
+async def fetch_shakemap(event_id: str):
+  # Run sync Playwright in thread pool
+  loop = asyncio.get_event_loop()
+  shakemap_url = await loop.run_in_executor(executor, fetch_shakemap_sync, event_id)
+  
+  # Fetch the JSON data using httpx
+  async with httpx.AsyncClient(timeout=30.0) as client:
+    resp = await client.get(shakemap_url)
 
-        data = resp.json()
-        return data
+    if resp.status_code != 200:
+      raise HTTPException(status_code=500, detail="Failed to fetch shakemap data.")
+
+    data = resp.json()
+    return data
 
 @app.post("/api/bridges")
 async def fetch_bridges(coords: Coordinates):
@@ -96,12 +117,35 @@ async def calc_prob_failures(payload: dict):
     shakemap_data = payload['shakemap_data']
     bridges = payload['bridges']
 
+    eq_lat, eq_lon = float(shakemap_data["latitude"]), float(shakemap_data["longitude"])
+    eq_depth = float(shakemap_data["depth"])
+    magnitude = float(shakemap_data["magnitude"])
+    vs30 = float(shakemap_data["vs30"])
+
+
+    # GMPE Parameters (depth to 1,500 m/s, strike-slip/normal faults, regional q value: California)
+    Bdepth = 0.75
+    F = 1.0
+    Q_0 = 150
 
     bridge_probs = []
 
     for bridge in bridges:
-      SA03 = float(shakemap_data["ground_motions"]["SA03"]["max"])
-      SA10 = float(shakemap_data["ground_motions"]["SA10"]["max"])
+      bridge_lat, bridge_lon = float(bridge['LATITUDE']), float(bridge['LONGITUDE'])
+
+      lat1, lon1 = math.radians(eq_lat), math.radians(eq_lon)
+      lat2, lon2 = math.radians(bridge_lat), math.radians(bridge_lon)
+
+      dlon = lon2 - lon1
+      dlat = lat2 - lat1
+      a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+      c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+      R_earth = 6371
+      distance_surface = R_earth * c
+
+      R = math.sqrt(distance_surface**2 + eq_depth**2)
+
+      _, SA03, SA10 = cal_GK15(magnitude, R, vs30, Bdepth, F, Q_0)
 
       medians = np.array([
         bridge['SLIGHT_MEDIAN'],
@@ -144,15 +188,10 @@ async def calc_prob_failures(payload: dict):
 async def root():
     return {"message": "FastAPI is running"}
 
+@app.on_event("shutdown")
+async def shutdown_event():
+    executor.shutdown(wait=True)
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-                
-
-
-
-
-
-
-
-
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

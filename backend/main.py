@@ -116,12 +116,14 @@ async def fetch_bridges(coords: Coordinates):
 async def calc_prob_failures(payload: dict):
     shakemap_data = payload['shakemap_data']
     bridges = payload['bridges']
+    target_magnitude = payload['target_magnitude']
 
     eq_lat, eq_lon = float(shakemap_data["latitude"]), float(shakemap_data["longitude"])
     eq_depth = float(shakemap_data["depth"])
-    magnitude = float(shakemap_data["magnitude"])
+    actual_magnitude = float(shakemap_data["magnitude"])
     vs30 = float(shakemap_data["vs30"])
 
+    magnitude = target_magnitude if target_magnitude else actual_magnitude
 
     # GMPE Parameters (depth to 1,500 m/s, strike-slip/normal faults, regional q value: California)
     Bdepth = 0.75

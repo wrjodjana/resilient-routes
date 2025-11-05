@@ -23,6 +23,7 @@ export default function Sidebar({ map }: MapProps) {
   const [is_loading, set_is_loading] = useState(false);
 
   const [shakemap_data, set_shakemap_data] = useState<any>(null);
+  const [target_magnitude, set_target_magnitude] = useState<number | null>(null);
 
   const handle_select_location = async () => {
     if (!map) {
@@ -100,10 +101,15 @@ export default function Sidebar({ map }: MapProps) {
     set_is_loading(true);
 
     try {
+      const payload: any = { shakemap_data, bridges };
+
+      if (target_magnitude !== null) {
+        payload.target_magnitude = target_magnitude;
+      }
       const failures_response = await fetch(`http://localhost:8000/api/bridge_failures`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ shakemap_data, bridges }),
+        body: JSON.stringify(payload),
       });
 
       const failures = await failures_response.json();
@@ -202,6 +208,15 @@ export default function Sidebar({ map }: MapProps) {
       <button onClick={handle_fetch_earthquakes} style={{ backgroundColor: "white", color: "black" }}>
         Fetch Earthquake
       </button>
+      <input
+        type="number"
+        value={target_magnitude || ""}
+        onChange={(e) => {
+          const val = e.target.value;
+          set_target_magnitude(val ? parseFloat(val) : null);
+        }}
+        placeholder="Target Magnitude"
+      />
       <button onClick={handle_fetch_bridge_failures} style={{ backgroundColor: "white", color: "black" }}>
         Fetch Bridge Failures
       </button>

@@ -116,7 +116,7 @@ async def fetch_bridges(coords: Coordinates):
 async def calc_prob_failures(payload: dict):
     shakemap_data = payload['shakemap_data']
     bridges = payload['bridges']
-    target_magnitude = payload['target_magnitude']
+    target_magnitude = payload.get('target_magnitude')
 
     eq_lat, eq_lon = float(shakemap_data["latitude"]), float(shakemap_data["longitude"])
     eq_depth = float(shakemap_data["depth"])
